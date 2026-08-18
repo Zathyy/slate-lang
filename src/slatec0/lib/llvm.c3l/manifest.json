@@ -1,0 +1,33 @@
+{
+  "provides": "llvm",
+  "targets" : {
+    "macos-x64" : {
+      "linked-libraries" : []
+    },
+    "macos-aarch64" : {
+      "linked-libraries" : []
+    },
+    "linux-aarch64" : {
+      "linked-libraries" : [ "LLVM" ]
+    },
+    "linux-riscv32" : {
+      "linked-libraries" : [ "LLVM" ]
+    },
+    "linux-riscv64" : {
+      "linked-libraries" : [ "LLVM" ]
+    },
+    "linux-x86" : {
+      "linked-libraries" : [ "LLVM" ]
+    },
+    "linux-x64" : {
+      "linked-libraries" : [ "LLVM" ]
+    },
+    "freebsd-x64" : {
+      "link-args" : [ "-L /usr/local/lib" ],
+      "linked-libraries" : [ "LLVM" ]
+    },
+    "windows-x64" : {
+      "linked-libraries" : [ "LLVM-C" ]
+    }
+  }
+}

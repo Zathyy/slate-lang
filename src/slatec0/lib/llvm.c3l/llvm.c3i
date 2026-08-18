@@ -1,0 +1,7153 @@
+
+module llvm;
+
+const LLVM_DISASSEMBLER_VARIANT_KIND_NONE = 0;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM_HI16 = 1;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM_LO16 = 2;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM64_PAGE = 1;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM64_PAGEOFF = 2;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM64_GOTPAGE = 3;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM64_GOTPAGEOFF = 4;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM64_TLVP = 5;
+const LLVM_DISASSEMBLER_VARIANT_KIND_ARM64_TLVOFF = 6;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_OUT_NONE = 0;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_BRANCH = 1;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_P_CREL_LOAD = 2;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_ARM64_ADRP = 0x100000001;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_ARM64_ADD_XRI = 0x100000002;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_ARM64_LDR_XUI = 0x100000003;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_ARM64_LDR_XL = 0x100000004;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_IN_ARM64_ADR = 0x100000005;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_SYMBOL_STUB = 1;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_LIT_POOL_SYM_ADDR = 2;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_LIT_POOL_CSTR_ADDR = 3;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_OBJC_CF_STRING_REF = 4;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_OBJC_MESSAGE = 5;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_OBJC_MESSAGE_REF = 6;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_OBJC_SELECTOR_REF = 7;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_OUT_OBJC_CLASS_REF = 8;
+const LLVM_DISASSEMBLER_REFERENCE_TYPE_DE_MANGLED_NAME = 9;
+const LLVM_DISASSEMBLER_OPTION_USE_MARKUP = 1;
+const LLVM_DISASSEMBLER_OPTION_PRINT_IMM_HEX = 2;
+const LLVM_DISASSEMBLER_OPTION_ASM_PRINTER_VARIANT = 4;
+const LLVM_DISASSEMBLER_OPTION_SET_INSTR_COMMENTS = 8;
+const LLVM_DISASSEMBLER_OPTION_PRINT_LATENCY = 16;
+const LLVM_DISASSEMBLER_OPTION_COLOR = 32;
+const LLVM_ERROR_SUCCESS = 0;
+const REMARKS_API_VERSION = 1;
+
+const FALSE = 0;
+const TRUE  = 1;
+
+alias LLVMBool = CInt;
+
+alias LLVMMemoryBufferRef = void*;
+
+alias LLVMContextRef = void*;
+
+alias LLVMModuleRef = void*;
+
+alias LLVMTypeRef = void*;
+
+alias LLVMValueRef = void*;
+
+alias LLVMBasicBlockRef = void*;
+
+alias LLVMMetadataRef = void*;
+
+alias LLVMNamedMDNodeRef = void*;
+
+alias LLVMValueMetadataEntry = void;
+
+alias LLVMBuilderRef = void*;
+
+alias LLVMDIBuilderRef = void*;
+
+alias LLVMModuleProviderRef = void*;
+
+alias LLVMPassManagerRef = void*;
+
+alias LLVMUseRef = void*;
+
+alias LLVMOperandBundleRef = void*;
+
+alias LLVMAttributeRef = void*;
+
+alias LLVMDiagnosticInfoRef = void*;
+
+alias LLVMComdatRef = void*;
+
+alias LLVMModuleFlagEntry = void;
+
+alias LLVMJITEventListenerRef = void*;
+
+alias LLVMBinaryRef = void*;
+
+alias LLVMDbgRecordRef = void*;
+
+constdef LLVMVerifierFailureAction : CUInt {
+  ABORT_PROCESS_ACTION = 0,
+  PRINT_MESSAGE_ACTION = 1,
+  RETURN_STATUS_ACTION = 2
+}
+
+extern fn LLVMBool verify_module(
+  LLVMModuleRef m,
+  LLVMVerifierFailureAction action,
+  CChar** out_message)
+@cname("LLVMVerifyModule");
+
+extern fn LLVMBool verify_function(
+  LLVMValueRef _fn,
+  LLVMVerifierFailureAction action)
+@cname("LLVMVerifyFunction");
+
+extern fn void view_function_cfg(
+  LLVMValueRef _fn)
+@cname("LLVMViewFunctionCFG");
+
+extern fn void view_function_cfg_only(
+  LLVMValueRef _fn)
+@cname("LLVMViewFunctionCFGOnly");
+
+extern fn LLVMBool parse_bitcode(
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_module,
+  CChar** out_message)
+@cname("LLVMParseBitcode");
+
+extern fn LLVMBool parse_bitcode_2(
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_module)
+@cname("LLVMParseBitcode2");
+
+extern fn LLVMBool parse_bitcode_in_context(
+  LLVMContextRef context_ref,
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_module,
+  CChar** out_message)
+@cname("LLVMParseBitcodeInContext");
+
+extern fn LLVMBool parse_bitcode_in_context_2(
+  LLVMContextRef context_ref,
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_module)
+@cname("LLVMParseBitcodeInContext2");
+
+extern fn LLVMBool get_bitcode_module_in_context(
+  LLVMContextRef context_ref,
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_m,
+  CChar** out_message)
+@cname("LLVMGetBitcodeModuleInContext");
+
+extern fn LLVMBool get_bitcode_module_in_context_2(
+  LLVMContextRef context_ref,
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_m)
+@cname("LLVMGetBitcodeModuleInContext2");
+
+extern fn LLVMBool get_bitcode_module(
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_m,
+  CChar** out_message)
+@cname("LLVMGetBitcodeModule");
+
+extern fn LLVMBool get_bitcode_module_2(
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_m)
+@cname("LLVMGetBitcodeModule2");
+
+extern fn CInt write_bitcode_to_file(
+  LLVMModuleRef m,
+  CChar* path)
+@cname("LLVMWriteBitcodeToFile");
+
+extern fn CInt write_bitcode_to_fd(
+  LLVMModuleRef m,
+  CInt fd,
+  CInt should_close,
+  CInt unbuffered)
+@cname("LLVMWriteBitcodeToFD");
+
+extern fn CInt write_bitcode_to_file_handle(
+  LLVMModuleRef m,
+  CInt handle)
+@cname("LLVMWriteBitcodeToFileHandle");
+
+extern fn LLVMMemoryBufferRef write_bitcode_to_memory_buffer(
+  LLVMModuleRef m)
+@cname("LLVMWriteBitcodeToMemoryBuffer");
+
+constdef LLVMComdatSelectionKind : CUInt {
+  ANY_COMDAT_SELECTION_KIND = 0,
+  EXACT_MATCH_COMDAT_SELECTION_KIND = 1,
+  LARGEST_COMDAT_SELECTION_KIND = 2,
+  NO_DEDUPLICATE_COMDAT_SELECTION_KIND = 3,
+  SAME_SIZE_COMDAT_SELECTION_KIND = 4
+}
+
+extern fn LLVMComdatRef get_or_insert_comdat(
+  LLVMModuleRef m,
+  CChar* name)
+@cname("LLVMGetOrInsertComdat");
+
+extern fn LLVMComdatRef get_comdat(
+  LLVMValueRef v)
+@cname("LLVMGetComdat");
+
+extern fn void set_comdat(
+  LLVMValueRef v,
+  LLVMComdatRef c)
+@cname("LLVMSetComdat");
+
+extern fn LLVMComdatSelectionKind get_comdat_selection_kind(
+  LLVMComdatRef c)
+@cname("LLVMGetComdatSelectionKind");
+
+extern fn void set_comdat_selection_kind(
+  LLVMComdatRef c,
+  LLVMComdatSelectionKind kind)
+@cname("LLVMSetComdatSelectionKind");
+
+alias LLVMFatalErrorHandler = fn void(
+  CChar* reason);
+
+extern fn void install_fatal_error_handler(
+  LLVMFatalErrorHandler handler)
+@cname("LLVMInstallFatalErrorHandler");
+
+extern fn void reset_fatal_error_handler()
+@cname("LLVMResetFatalErrorHandler");
+
+extern fn void enable_pretty_stack_trace()
+@cname("LLVMEnablePrettyStackTrace");
+
+constdef LLVMOpcode : CUInt {
+  RET = 1,
+  BR = 2,
+  SWITCH = 3,
+  INDIRECT_BR = 4,
+  INVOKE = 5,
+  UNREACHABLE = 7,
+  CALL_BR = 67,
+  F_NEG = 66,
+  ADD = 8,
+  F_ADD = 9,
+  SUB = 10,
+  F_SUB = 11,
+  MUL = 12,
+  F_MUL = 13,
+  U_DIV = 14,
+  S_DIV = 15,
+  F_DIV = 16,
+  U_REM = 17,
+  S_REM = 18,
+  F_REM = 19,
+  SHL = 20,
+  L_SHR = 21,
+  A_SHR = 22,
+  AND = 23,
+  OR = 24,
+  XOR = 25,
+  ALLOCA = 26,
+  LOAD = 27,
+  STORE = 28,
+  GET_ELEMENT_PTR = 29,
+  TRUNC = 30,
+  Z_EXT = 31,
+  S_EXT = 32,
+  FP_TO_UI = 33,
+  FP_TO_SI = 34,
+  UI_TO_FP = 35,
+  SI_TO_FP = 36,
+  FP_TRUNC = 37,
+  FP_EXT = 38,
+  PTR_TO_INT = 39,
+  PTR_TO_ADDR = 69,
+  INT_TO_PTR = 40,
+  BIT_CAST = 41,
+  ADDR_SPACE_CAST = 60,
+  I_CMP = 42,
+  F_CMP = 43,
+  PHI = 44,
+  CALL = 45,
+  SELECT = 46,
+  USER_OP_1 = 47,
+  USER_OP_2 = 48,
+  VA_ARG = 49,
+  EXTRACT_ELEMENT = 50,
+  INSERT_ELEMENT = 51,
+  SHUFFLE_VECTOR = 52,
+  EXTRACT_VALUE = 53,
+  INSERT_VALUE = 54,
+  FREEZE = 68,
+  FENCE = 55,
+  ATOMIC_CMP_XCHG = 56,
+  ATOMIC_RMW = 57,
+  RESUME = 58,
+  LANDING_PAD = 59,
+  CLEANUP_RET = 61,
+  CATCH_RET = 62,
+  CATCH_PAD = 63,
+  CLEANUP_PAD = 64,
+  CATCH_SWITCH = 65
+}
+
+constdef LLVMTypeKind : CUInt {
+  VOID_TYPE_KIND = 0,
+  HALF_TYPE_KIND = 1,
+  FLOAT_TYPE_KIND = 2,
+  DOUBLE_TYPE_KIND = 3,
+  X86_FP80_TYPE_KIND = 4,
+  FP128_TYPE_KIND = 5,
+  PPC_FP128_TYPE_KIND = 6,
+  LABEL_TYPE_KIND = 7,
+  INTEGER_TYPE_KIND = 8,
+  FUNCTION_TYPE_KIND = 9,
+  STRUCT_TYPE_KIND = 10,
+  ARRAY_TYPE_KIND = 11,
+  POINTER_TYPE_KIND = 12,
+  VECTOR_TYPE_KIND = 13,
+  METADATA_TYPE_KIND = 14,
+  TOKEN_TYPE_KIND = 16,
+  SCALABLE_VECTOR_TYPE_KIND = 17,
+  B_FLOAT_TYPE_KIND = 18,
+  X86_AMX_TYPE_KIND = 19,
+  TARGET_EXT_TYPE_KIND = 20
+}
+
+constdef LLVMLinkage : CUInt {
+  EXTERNAL_LINKAGE = 0,
+  AVAILABLE_EXTERNALLY_LINKAGE = 1,
+  LINK_ONCE_ANY_LINKAGE = 2,
+  LINK_ONCE_ODR_LINKAGE = 3,
+  LINK_ONCE_ODR_AUTO_HIDE_LINKAGE = 4,
+  WEAK_ANY_LINKAGE = 5,
+  WEAK_ODR_LINKAGE = 6,
+  APPENDING_LINKAGE = 7,
+  INTERNAL_LINKAGE = 8,
+  PRIVATE_LINKAGE = 9,
+  DLL_IMPORT_LINKAGE = 10,
+  DLL_EXPORT_LINKAGE = 11,
+  EXTERNAL_WEAK_LINKAGE = 12,
+  GHOST_LINKAGE = 13,
+  COMMON_LINKAGE = 14,
+  LINKER_PRIVATE_LINKAGE = 15,
+  LINKER_PRIVATE_WEAK_LINKAGE = 16
+}
+
+constdef LLVMVisibility : CUInt {
+  DEFAULT_VISIBILITY = 0,
+  HIDDEN_VISIBILITY = 1,
+  PROTECTED_VISIBILITY = 2
+}
+
+constdef LLVMUnnamedAddr : CUInt {
+  NO_UNNAMED_ADDR = 0,
+  LOCAL_UNNAMED_ADDR = 1,
+  GLOBAL_UNNAMED_ADDR = 2
+}
+
+constdef LLVMDLLStorageClass : CUInt {
+  DEFAULT_STORAGE_CLASS = 0,
+  DLL_IMPORT_STORAGE_CLASS = 1,
+  DLL_EXPORT_STORAGE_CLASS = 2
+}
+
+constdef LLVMCallConv : CUInt {
+  C_CALL_CONV = 0,
+  FAST_CALL_CONV = 8,
+  COLD_CALL_CONV = 9,
+  GHC_CALL_CONV = 10,
+  HI_PE_CALL_CONV = 11,
+  ANY_REG_CALL_CONV = 13,
+  PRESERVE_MOST_CALL_CONV = 14,
+  PRESERVE_ALL_CALL_CONV = 15,
+  SWIFT_CALL_CONV = 16,
+  CXXFASTTLS_CALL_CONV = 17,
+  X86_STDCALL_CALL_CONV = 64,
+  X86_FASTCALL_CALL_CONV = 65,
+  ARMAPCS_CALL_CONV = 66,
+  ARMAAPCS_CALL_CONV = 67,
+  ARMAAPCSVFP_CALL_CONV = 68,
+  MSP430_INTR_CALL_CONV = 69,
+  X86_THIS_CALL_CALL_CONV = 70,
+  PTX_KERNEL_CALL_CONV = 71,
+  PTX_DEVICE_CALL_CONV = 72,
+  SPIRFUNC_CALL_CONV = 75,
+  SPIRKERNEL_CALL_CONV = 76,
+  INTEL_OCLBI_CALL_CONV = 77,
+  X8664_SYS_V_CALL_CONV = 78,
+  WIN_64_CALL_CONV = 79,
+  X86_VECTOR_CALL_CALL_CONV = 80,
+  HHVM_CALL_CONV = 81,
+  HHVMC_CALL_CONV = 82,
+  X86_INTR_CALL_CONV = 83,
+  AVRINTR_CALL_CONV = 84,
+  AVRSIGNAL_CALL_CONV = 85,
+  AVRBUILTIN_CALL_CONV = 86,
+  AMDGPUVS_CALL_CONV = 87,
+  AMDGPUGS_CALL_CONV = 88,
+  AMDGPUPS_CALL_CONV = 89,
+  AMDGPUCS_CALL_CONV = 90,
+  AMDGPUKERNEL_CALL_CONV = 91,
+  X86_REG_CALL_CALL_CONV = 92,
+  AMDGPUHS_CALL_CONV = 93,
+  MSP430_BUILTIN_CALL_CONV = 94,
+  AMDGPULS_CALL_CONV = 95,
+  AMDGPUES_CALL_CONV = 96
+}
+
+constdef LLVMValueKind : CUInt {
+  ARGUMENT_VALUE_KIND = 0,
+  BASIC_BLOCK_VALUE_KIND = 1,
+  MEMORY_USE_VALUE_KIND = 2,
+  MEMORY_DEF_VALUE_KIND = 3,
+  MEMORY_PHI_VALUE_KIND = 4,
+  FUNCTION_VALUE_KIND = 5,
+  GLOBAL_ALIAS_VALUE_KIND = 6,
+  GLOBAL_I_FUNC_VALUE_KIND = 7,
+  GLOBAL_VARIABLE_VALUE_KIND = 8,
+  BLOCK_ADDRESS_VALUE_KIND = 9,
+  CONSTANT_EXPR_VALUE_KIND = 10,
+  CONSTANT_ARRAY_VALUE_KIND = 11,
+  CONSTANT_STRUCT_VALUE_KIND = 12,
+  CONSTANT_VECTOR_VALUE_KIND = 13,
+  UNDEF_VALUE_VALUE_KIND = 14,
+  CONSTANT_AGGREGATE_ZERO_VALUE_KIND = 15,
+  CONSTANT_DATA_ARRAY_VALUE_KIND = 16,
+  CONSTANT_DATA_VECTOR_VALUE_KIND = 17,
+  CONSTANT_INT_VALUE_KIND = 18,
+  CONSTANT_FP_VALUE_KIND = 19,
+  CONSTANT_POINTER_NULL_VALUE_KIND = 20,
+  CONSTANT_TOKEN_NONE_VALUE_KIND = 21,
+  METADATA_AS_VALUE_VALUE_KIND = 22,
+  INLINE_ASM_VALUE_KIND = 23,
+  INSTRUCTION_VALUE_KIND = 24,
+  POISON_VALUE_VALUE_KIND = 25,
+  CONSTANT_TARGET_NONE_VALUE_KIND = 26,
+  CONSTANT_PTR_AUTH_VALUE_KIND = 27
+}
+
+constdef LLVMIntPredicate : CUInt {
+  INT_EQ = 32,
+  INT_NE = 33,
+  INT_UGT = 34,
+  INT_UGE = 35,
+  INT_ULT = 36,
+  INT_ULE = 37,
+  INT_SGT = 38,
+  INT_SGE = 39,
+  INT_SLT = 40,
+  INT_SLE = 41
+}
+
+constdef LLVMRealPredicate : CUInt {
+  REAL_PREDICATE_FALSE = 0,
+  REAL_OEQ = 1,
+  REAL_OGT = 2,
+  REAL_OGE = 3,
+  REAL_OLT = 4,
+  REAL_OLE = 5,
+  REAL_ONE = 6,
+  REAL_ORD = 7,
+  REAL_UNO = 8,
+  REAL_UEQ = 9,
+  REAL_UGT = 10,
+  REAL_UGE = 11,
+  REAL_ULT = 12,
+  REAL_ULE = 13,
+  REAL_UNE = 14,
+  REAL_PREDICATE_TRUE = 15
+}
+
+constdef LLVMThreadLocalMode : CUInt {
+  NOT_THREAD_LOCAL = 0,
+  GENERAL_DYNAMIC_TLS_MODEL = 1,
+  LOCAL_DYNAMIC_TLS_MODEL = 2,
+  INITIAL_EXEC_TLS_MODEL = 3,
+  LOCAL_EXEC_TLS_MODEL = 4
+}
+
+constdef LLVMAtomicOrdering : CUInt {
+  ATOMIC_ORDERING_NOT_ATOMIC = 0,
+  ATOMIC_ORDERING_UNORDERED = 1,
+  ATOMIC_ORDERING_MONOTONIC = 2,
+  ATOMIC_ORDERING_ACQUIRE = 4,
+  ATOMIC_ORDERING_RELEASE = 5,
+  ATOMIC_ORDERING_ACQUIRE_RELEASE = 6,
+  ATOMIC_ORDERING_SEQUENTIALLY_CONSISTENT = 7
+}
+
+constdef LLVMAtomicRMWBinOp : CUInt {
+  ATOMIC_RMW_BIN_OP_XCHG = 0,
+  ATOMIC_RMW_BIN_OP_ADD = 1,
+  ATOMIC_RMW_BIN_OP_SUB = 2,
+  ATOMIC_RMW_BIN_OP_AND = 3,
+  ATOMIC_RMW_BIN_OP_NAND = 4,
+  ATOMIC_RMW_BIN_OP_OR = 5,
+  ATOMIC_RMW_BIN_OP_XOR = 6,
+  ATOMIC_RMW_BIN_OP_MAX = 7,
+  ATOMIC_RMW_BIN_OP_MIN = 8,
+  ATOMIC_RMW_BIN_OP_U_MAX = 9,
+  ATOMIC_RMW_BIN_OP_U_MIN = 10,
+  ATOMIC_RMW_BIN_OP_F_ADD = 11,
+  ATOMIC_RMW_BIN_OP_F_SUB = 12,
+  ATOMIC_RMW_BIN_OP_F_MAX = 13,
+  ATOMIC_RMW_BIN_OP_F_MIN = 14,
+  ATOMIC_RMW_BIN_OP_U_INC_WRAP = 15,
+  ATOMIC_RMW_BIN_OP_U_DEC_WRAP = 16,
+  ATOMIC_RMW_BIN_OP_U_SUB_COND = 17,
+  ATOMIC_RMW_BIN_OP_U_SUB_SAT = 18,
+  ATOMIC_RMW_BIN_OP_F_MAXIMUM = 19,
+  ATOMIC_RMW_BIN_OP_F_MINIMUM = 20
+}
+
+constdef LLVMDiagnosticSeverity : CUInt {
+  DS_ERROR = 0,
+  DS_WARNING = 1,
+  DS_REMARK = 2,
+  DS_NOTE = 3
+}
+
+constdef LLVMInlineAsmDialect : CUInt {
+  INLINE_ASM_DIALECT_ATT = 0,
+  INLINE_ASM_DIALECT_INTEL = 1
+}
+
+constdef LLVMModuleFlagBehavior : CUInt {
+  MODULE_FLAG_BEHAVIOR_ERROR = 0,
+  MODULE_FLAG_BEHAVIOR_WARNING = 1,
+  MODULE_FLAG_BEHAVIOR_REQUIRE = 2,
+  MODULE_FLAG_BEHAVIOR_OVERRIDE = 3,
+  MODULE_FLAG_BEHAVIOR_APPEND = 4,
+  MODULE_FLAG_BEHAVIOR_APPEND_UNIQUE = 5
+}
+
+alias LLVMAttributeIndex = CUInt;
+
+constdef LLVMTailCallKind : CUInt {
+  TAIL_CALL_KIND_NONE = 0,
+  TAIL_CALL_KIND_TAIL = 1,
+  TAIL_CALL_KIND_MUST_TAIL = 2,
+  TAIL_CALL_KIND_NO_TAIL = 3
+}
+
+alias LLVMFastMathFlags = CUInt;
+
+alias LLVMGEPNoWrapFlags = CUInt;
+
+constdef LLVMDbgRecordKind : CUInt {
+  DBG_RECORD_LABEL = 0,
+  DBG_RECORD_DECLARE = 1,
+  DBG_RECORD_VALUE = 2,
+  DBG_RECORD_ASSIGN = 3
+}
+
+extern fn void shutdown()
+@cname("LLVMShutdown");
+
+extern fn void get_version(
+  CUInt* major,
+  CUInt* minor,
+  CUInt* patch)
+@cname("LLVMGetVersion");
+
+extern fn CChar* create_message(
+  CChar* message)
+@cname("LLVMCreateMessage");
+
+extern fn void dispose_message(
+  CChar* message)
+@cname("LLVMDisposeMessage");
+
+alias LLVMDiagnosticHandler = fn void(
+  LLVMDiagnosticInfoRef,
+  void*);
+
+alias LLVMYieldCallback = fn void(
+  LLVMContextRef,
+  void*);
+
+extern fn LLVMContextRef context_create()
+@cname("LLVMContextCreate");
+
+extern fn LLVMContextRef get_global_context()
+@cname("LLVMGetGlobalContext");
+
+extern fn void context_set_diagnostic_handler(
+  LLVMContextRef c,
+  LLVMDiagnosticHandler handler,
+  void* diagnostic_context)
+@cname("LLVMContextSetDiagnosticHandler");
+
+extern fn LLVMDiagnosticHandler context_get_diagnostic_handler(
+  LLVMContextRef c)
+@cname("LLVMContextGetDiagnosticHandler");
+
+extern fn void* context_get_diagnostic_context(
+  LLVMContextRef c)
+@cname("LLVMContextGetDiagnosticContext");
+
+extern fn void context_set_yield_callback(
+  LLVMContextRef c,
+  LLVMYieldCallback callback,
+  void* opaque_handle)
+@cname("LLVMContextSetYieldCallback");
+
+extern fn LLVMBool context_should_discard_value_names(
+  LLVMContextRef c)
+@cname("LLVMContextShouldDiscardValueNames");
+
+extern fn void context_set_discard_value_names(
+  LLVMContextRef c,
+  LLVMBool discard)
+@cname("LLVMContextSetDiscardValueNames");
+
+extern fn void context_dispose(
+  LLVMContextRef c)
+@cname("LLVMContextDispose");
+
+extern fn CChar* get_diag_info_description(
+  LLVMDiagnosticInfoRef di)
+@cname("LLVMGetDiagInfoDescription");
+
+extern fn LLVMDiagnosticSeverity get_diag_info_severity(
+  LLVMDiagnosticInfoRef di)
+@cname("LLVMGetDiagInfoSeverity");
+
+extern fn CUInt get_md_kind_id_in_context(
+  LLVMContextRef c,
+  CChar* name,
+  CUInt s_len)
+@cname("LLVMGetMDKindIDInContext");
+
+extern fn CUInt get_md_kind_id(
+  CChar* name,
+  CUInt s_len)
+@cname("LLVMGetMDKindID");
+
+extern fn CUInt get_sync_scope_id(
+  LLVMContextRef c,
+  CChar* name,
+  sz s_len)
+@cname("LLVMGetSyncScopeID");
+
+extern fn CUInt get_enum_attribute_kind_for_name(
+  CChar* name,
+  sz s_len)
+@cname("LLVMGetEnumAttributeKindForName");
+
+extern fn CUInt get_last_enum_attribute_kind()
+@cname("LLVMGetLastEnumAttributeKind");
+
+extern fn LLVMAttributeRef create_enum_attribute(
+  LLVMContextRef c,
+  CUInt kind_id,
+  ulong val)
+@cname("LLVMCreateEnumAttribute");
+
+extern fn CUInt get_enum_attribute_kind(
+  LLVMAttributeRef a)
+@cname("LLVMGetEnumAttributeKind");
+
+extern fn ulong get_enum_attribute_value(
+  LLVMAttributeRef a)
+@cname("LLVMGetEnumAttributeValue");
+
+extern fn LLVMAttributeRef create_type_attribute(
+  LLVMContextRef c,
+  CUInt kind_id,
+  LLVMTypeRef type_ref)
+@cname("LLVMCreateTypeAttribute");
+
+extern fn LLVMTypeRef get_type_attribute_value(
+  LLVMAttributeRef a)
+@cname("LLVMGetTypeAttributeValue");
+
+extern fn LLVMAttributeRef create_constant_range_attribute(
+  LLVMContextRef c,
+  CUInt kind_id,
+  CUInt num_bits,
+  ulong* lower_words,
+  ulong* upper_words)
+@cname("LLVMCreateConstantRangeAttribute");
+
+extern fn LLVMAttributeRef create_string_attribute(
+  LLVMContextRef c,
+  CChar* k,
+  CUInt k_length,
+  CChar* v,
+  CUInt v_length)
+@cname("LLVMCreateStringAttribute");
+
+extern fn CChar* get_string_attribute_kind(
+  LLVMAttributeRef a,
+  CUInt* length)
+@cname("LLVMGetStringAttributeKind");
+
+extern fn CChar* get_string_attribute_value(
+  LLVMAttributeRef a,
+  CUInt* length)
+@cname("LLVMGetStringAttributeValue");
+
+extern fn LLVMBool is_enum_attribute(
+  LLVMAttributeRef a)
+@cname("LLVMIsEnumAttribute");
+
+extern fn LLVMBool is_string_attribute(
+  LLVMAttributeRef a)
+@cname("LLVMIsStringAttribute");
+
+extern fn LLVMBool is_type_attribute(
+  LLVMAttributeRef a)
+@cname("LLVMIsTypeAttribute");
+
+extern fn LLVMTypeRef get_type_by_name_2(
+  LLVMContextRef c,
+  CChar* name)
+@cname("LLVMGetTypeByName2");
+
+extern fn LLVMModuleRef module_create_with_name(
+  CChar* module_id)
+@cname("LLVMModuleCreateWithName");
+
+extern fn LLVMModuleRef module_create_with_name_in_context(
+  CChar* module_id,
+  LLVMContextRef c)
+@cname("LLVMModuleCreateWithNameInContext");
+
+extern fn LLVMModuleRef clone_module(
+  LLVMModuleRef m)
+@cname("LLVMCloneModule");
+
+extern fn void dispose_module(
+  LLVMModuleRef m)
+@cname("LLVMDisposeModule");
+
+extern fn LLVMBool is_new_dbg_info_format(
+  LLVMModuleRef m)
+@cname("LLVMIsNewDbgInfoFormat");
+
+extern fn void set_is_new_dbg_info_format(
+  LLVMModuleRef m,
+  LLVMBool use_new_format)
+@cname("LLVMSetIsNewDbgInfoFormat");
+
+extern fn CChar* get_module_identifier(
+  LLVMModuleRef m,
+  sz* len)
+@cname("LLVMGetModuleIdentifier");
+
+extern fn void set_module_identifier(
+  LLVMModuleRef m,
+  CChar* ident,
+  sz len)
+@cname("LLVMSetModuleIdentifier");
+
+extern fn CChar* get_source_file_name(
+  LLVMModuleRef m,
+  sz* len)
+@cname("LLVMGetSourceFileName");
+
+extern fn void set_source_file_name(
+  LLVMModuleRef m,
+  CChar* name,
+  sz len)
+@cname("LLVMSetSourceFileName");
+
+extern fn CChar* get_data_layout_str(
+  LLVMModuleRef m)
+@cname("LLVMGetDataLayoutStr");
+
+extern fn CChar* get_data_layout(
+  LLVMModuleRef m)
+@cname("LLVMGetDataLayout");
+
+extern fn void set_data_layout(
+  LLVMModuleRef m,
+  CChar* data_layout_str)
+@cname("LLVMSetDataLayout");
+
+extern fn CChar* get_target(
+  LLVMModuleRef m)
+@cname("LLVMGetTarget");
+
+extern fn void set_target(
+  LLVMModuleRef m,
+  CChar* triple)
+@cname("LLVMSetTarget");
+
+extern fn LLVMModuleFlagEntry* copy_module_flags_metadata(
+  LLVMModuleRef m,
+  sz* len)
+@cname("LLVMCopyModuleFlagsMetadata");
+
+extern fn void dispose_module_flags_metadata(
+  LLVMModuleFlagEntry* entries)
+@cname("LLVMDisposeModuleFlagsMetadata");
+
+extern fn LLVMModuleFlagBehavior module_flag_entries_get_flag_behavior(
+  LLVMModuleFlagEntry* entries,
+  CUInt index)
+@cname("LLVMModuleFlagEntriesGetFlagBehavior");
+
+extern fn CChar* module_flag_entries_get_key(
+  LLVMModuleFlagEntry* entries,
+  CUInt index,
+  sz* len)
+@cname("LLVMModuleFlagEntriesGetKey");
+
+extern fn LLVMMetadataRef module_flag_entries_get_metadata(
+  LLVMModuleFlagEntry* entries,
+  CUInt index)
+@cname("LLVMModuleFlagEntriesGetMetadata");
+
+extern fn LLVMMetadataRef get_module_flag(
+  LLVMModuleRef m,
+  CChar* key,
+  sz key_len)
+@cname("LLVMGetModuleFlag");
+
+extern fn void add_module_flag(
+  LLVMModuleRef m,
+  LLVMModuleFlagBehavior behavior,
+  CChar* key,
+  sz key_len,
+  LLVMMetadataRef val)
+@cname("LLVMAddModuleFlag");
+
+extern fn void dump_module(
+  LLVMModuleRef m)
+@cname("LLVMDumpModule");
+
+extern fn LLVMBool print_module_to_file(
+  LLVMModuleRef m,
+  CChar* filename,
+  CChar** error_message)
+@cname("LLVMPrintModuleToFile");
+
+extern fn CChar* print_module_to_string(
+  LLVMModuleRef m)
+@cname("LLVMPrintModuleToString");
+
+extern fn CChar* get_module_inline_asm(
+  LLVMModuleRef m,
+  sz* len)
+@cname("LLVMGetModuleInlineAsm");
+
+extern fn void set_module_inline_asm_2(
+  LLVMModuleRef m,
+  CChar* _asm,
+  sz len)
+@cname("LLVMSetModuleInlineAsm2");
+
+extern fn void append_module_inline_asm(
+  LLVMModuleRef m,
+  CChar* _asm,
+  sz len)
+@cname("LLVMAppendModuleInlineAsm");
+
+extern fn LLVMValueRef get_inline_asm(
+  LLVMTypeRef ty,
+  CChar* asm_string,
+  sz asm_string_size,
+  CChar* constraints,
+  sz constraints_size,
+  LLVMBool has_side_effects,
+  LLVMBool is_align_stack,
+  LLVMInlineAsmDialect dialect,
+  LLVMBool can_throw)
+@cname("LLVMGetInlineAsm");
+
+extern fn CChar* get_inline_asm_asm_string(
+  LLVMValueRef inline_asm_val,
+  sz* len)
+@cname("LLVMGetInlineAsmAsmString");
+
+extern fn CChar* get_inline_asm_constraint_string(
+  LLVMValueRef inline_asm_val,
+  sz* len)
+@cname("LLVMGetInlineAsmConstraintString");
+
+extern fn LLVMInlineAsmDialect get_inline_asm_dialect(
+  LLVMValueRef inline_asm_val)
+@cname("LLVMGetInlineAsmDialect");
+
+extern fn LLVMTypeRef get_inline_asm_function_type(
+  LLVMValueRef inline_asm_val)
+@cname("LLVMGetInlineAsmFunctionType");
+
+extern fn LLVMBool get_inline_asm_has_side_effects(
+  LLVMValueRef inline_asm_val)
+@cname("LLVMGetInlineAsmHasSideEffects");
+
+extern fn LLVMBool get_inline_asm_needs_aligned_stack(
+  LLVMValueRef inline_asm_val)
+@cname("LLVMGetInlineAsmNeedsAlignedStack");
+
+extern fn LLVMBool get_inline_asm_can_unwind(
+  LLVMValueRef inline_asm_val)
+@cname("LLVMGetInlineAsmCanUnwind");
+
+extern fn LLVMContextRef get_module_context(
+  LLVMModuleRef m)
+@cname("LLVMGetModuleContext");
+
+extern fn LLVMTypeRef get_type_by_name(
+  LLVMModuleRef m,
+  CChar* name)
+@cname("LLVMGetTypeByName");
+
+extern fn LLVMNamedMDNodeRef get_first_named_metadata(
+  LLVMModuleRef m)
+@cname("LLVMGetFirstNamedMetadata");
+
+extern fn LLVMNamedMDNodeRef get_last_named_metadata(
+  LLVMModuleRef m)
+@cname("LLVMGetLastNamedMetadata");
+
+extern fn LLVMNamedMDNodeRef get_next_named_metadata(
+  LLVMNamedMDNodeRef named_md_node)
+@cname("LLVMGetNextNamedMetadata");
+
+extern fn LLVMNamedMDNodeRef get_previous_named_metadata(
+  LLVMNamedMDNodeRef named_md_node)
+@cname("LLVMGetPreviousNamedMetadata");
+
+extern fn LLVMNamedMDNodeRef get_named_metadata(
+  LLVMModuleRef m,
+  CChar* name,
+  sz name_len)
+@cname("LLVMGetNamedMetadata");
+
+extern fn LLVMNamedMDNodeRef get_or_insert_named_metadata(
+  LLVMModuleRef m,
+  CChar* name,
+  sz name_len)
+@cname("LLVMGetOrInsertNamedMetadata");
+
+extern fn CChar* get_named_metadata_name(
+  LLVMNamedMDNodeRef named_md,
+  sz* name_len)
+@cname("LLVMGetNamedMetadataName");
+
+extern fn CUInt get_named_metadata_num_operands(
+  LLVMModuleRef m,
+  CChar* name)
+@cname("LLVMGetNamedMetadataNumOperands");
+
+extern fn void get_named_metadata_operands(
+  LLVMModuleRef m,
+  CChar* name,
+  LLVMValueRef* dest)
+@cname("LLVMGetNamedMetadataOperands");
+
+extern fn void add_named_metadata_operand(
+  LLVMModuleRef m,
+  CChar* name,
+  LLVMValueRef val)
+@cname("LLVMAddNamedMetadataOperand");
+
+extern fn CChar* get_debug_loc_directory(
+  LLVMValueRef val,
+  CUInt* length)
+@cname("LLVMGetDebugLocDirectory");
+
+extern fn CChar* get_debug_loc_filename(
+  LLVMValueRef val,
+  CUInt* length)
+@cname("LLVMGetDebugLocFilename");
+
+extern fn CUInt get_debug_loc_line(
+  LLVMValueRef val)
+@cname("LLVMGetDebugLocLine");
+
+extern fn CUInt get_debug_loc_column(
+  LLVMValueRef val)
+@cname("LLVMGetDebugLocColumn");
+
+extern fn LLVMValueRef add_function(
+  LLVMModuleRef m,
+  CChar* name,
+  LLVMTypeRef function_ty)
+@cname("LLVMAddFunction");
+
+extern fn LLVMValueRef get_or_insert_function(
+  LLVMModuleRef m,
+  CChar* name,
+  sz name_len,
+  LLVMTypeRef function_ty)
+@cname("LLVMGetOrInsertFunction");
+
+extern fn LLVMValueRef get_named_function(
+  LLVMModuleRef m,
+  CChar* name)
+@cname("LLVMGetNamedFunction");
+
+extern fn LLVMValueRef get_named_function_with_length(
+  LLVMModuleRef m,
+  CChar* name,
+  sz length)
+@cname("LLVMGetNamedFunctionWithLength");
+
+extern fn LLVMValueRef get_first_function(
+  LLVMModuleRef m)
+@cname("LLVMGetFirstFunction");
+
+extern fn LLVMValueRef get_last_function(
+  LLVMModuleRef m)
+@cname("LLVMGetLastFunction");
+
+extern fn LLVMValueRef get_next_function(
+  LLVMValueRef _fn)
+@cname("LLVMGetNextFunction");
+
+extern fn LLVMValueRef get_previous_function(
+  LLVMValueRef _fn)
+@cname("LLVMGetPreviousFunction");
+
+extern fn void set_module_inline_asm(
+  LLVMModuleRef m,
+  CChar* _asm)
+@cname("LLVMSetModuleInlineAsm");
+
+extern fn LLVMTypeKind get_type_kind(
+  LLVMTypeRef ty)
+@cname("LLVMGetTypeKind");
+
+extern fn LLVMBool type_is_sized(
+  LLVMTypeRef ty)
+@cname("LLVMTypeIsSized");
+
+extern fn LLVMContextRef get_type_context(
+  LLVMTypeRef ty)
+@cname("LLVMGetTypeContext");
+
+extern fn void dump_type(
+  LLVMTypeRef val)
+@cname("LLVMDumpType");
+
+extern fn CChar* print_type_to_string(
+  LLVMTypeRef val)
+@cname("LLVMPrintTypeToString");
+
+extern fn LLVMTypeRef int_1_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMInt1TypeInContext");
+
+extern fn LLVMTypeRef int_8_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMInt8TypeInContext");
+
+extern fn LLVMTypeRef int_16_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMInt16TypeInContext");
+
+extern fn LLVMTypeRef int_32_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMInt32TypeInContext");
+
+extern fn LLVMTypeRef int_64_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMInt64TypeInContext");
+
+extern fn LLVMTypeRef int_128_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMInt128TypeInContext");
+
+extern fn LLVMTypeRef int_type_in_context(
+  LLVMContextRef c,
+  CUInt num_bits)
+@cname("LLVMIntTypeInContext");
+
+extern fn LLVMTypeRef int_1_type()
+@cname("LLVMInt1Type");
+
+extern fn LLVMTypeRef int_8_type()
+@cname("LLVMInt8Type");
+
+extern fn LLVMTypeRef int_16_type()
+@cname("LLVMInt16Type");
+
+extern fn LLVMTypeRef int_32_type()
+@cname("LLVMInt32Type");
+
+extern fn LLVMTypeRef int_64_type()
+@cname("LLVMInt64Type");
+
+extern fn LLVMTypeRef int_128_type()
+@cname("LLVMInt128Type");
+
+extern fn LLVMTypeRef int_type(
+  CUInt num_bits)
+@cname("LLVMIntType");
+
+extern fn CUInt get_int_type_width(
+  LLVMTypeRef integer_ty)
+@cname("LLVMGetIntTypeWidth");
+
+extern fn LLVMTypeRef half_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMHalfTypeInContext");
+
+extern fn LLVMTypeRef b_float_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMBFloatTypeInContext");
+
+extern fn LLVMTypeRef float_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMFloatTypeInContext");
+
+extern fn LLVMTypeRef double_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMDoubleTypeInContext");
+
+extern fn LLVMTypeRef x86_fp80_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMX86FP80TypeInContext");
+
+extern fn LLVMTypeRef fp128_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMFP128TypeInContext");
+
+extern fn LLVMTypeRef ppcfp128_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMPPCFP128TypeInContext");
+
+extern fn LLVMTypeRef half_type()
+@cname("LLVMHalfType");
+
+extern fn LLVMTypeRef b_float_type()
+@cname("LLVMBFloatType");
+
+extern fn LLVMTypeRef float_type()
+@cname("LLVMFloatType");
+
+extern fn LLVMTypeRef double_type()
+@cname("LLVMDoubleType");
+
+extern fn LLVMTypeRef x86_fp80_type()
+@cname("LLVMX86FP80Type");
+
+extern fn LLVMTypeRef fp128_type()
+@cname("LLVMFP128Type");
+
+extern fn LLVMTypeRef ppcfp128_type()
+@cname("LLVMPPCFP128Type");
+
+extern fn LLVMTypeRef function_type(
+  LLVMTypeRef return_type,
+  LLVMTypeRef* param_types,
+  CUInt param_count,
+  LLVMBool is_var_arg)
+@cname("LLVMFunctionType");
+
+extern fn LLVMBool is_function_var_arg(
+  LLVMTypeRef function_ty)
+@cname("LLVMIsFunctionVarArg");
+
+extern fn LLVMTypeRef get_return_type(
+  LLVMTypeRef function_ty)
+@cname("LLVMGetReturnType");
+
+extern fn CUInt count_param_types(
+  LLVMTypeRef function_ty)
+@cname("LLVMCountParamTypes");
+
+extern fn void get_param_types(
+  LLVMTypeRef function_ty,
+  LLVMTypeRef* dest)
+@cname("LLVMGetParamTypes");
+
+extern fn LLVMTypeRef struct_type_in_context(
+  LLVMContextRef c,
+  LLVMTypeRef* element_types,
+  CUInt element_count,
+  LLVMBool packed)
+@cname("LLVMStructTypeInContext");
+
+extern fn LLVMTypeRef struct_type(
+  LLVMTypeRef* element_types,
+  CUInt element_count,
+  LLVMBool packed)
+@cname("LLVMStructType");
+
+extern fn LLVMTypeRef struct_create_named(
+  LLVMContextRef c,
+  CChar* name)
+@cname("LLVMStructCreateNamed");
+
+extern fn CChar* get_struct_name(
+  LLVMTypeRef ty)
+@cname("LLVMGetStructName");
+
+extern fn void struct_set_body(
+  LLVMTypeRef struct_ty,
+  LLVMTypeRef* element_types,
+  CUInt element_count,
+  LLVMBool packed)
+@cname("LLVMStructSetBody");
+
+extern fn CUInt count_struct_element_types(
+  LLVMTypeRef struct_ty)
+@cname("LLVMCountStructElementTypes");
+
+extern fn void get_struct_element_types(
+  LLVMTypeRef struct_ty,
+  LLVMTypeRef* dest)
+@cname("LLVMGetStructElementTypes");
+
+extern fn LLVMTypeRef struct_get_type_at_index(
+  LLVMTypeRef struct_ty,
+  CUInt i)
+@cname("LLVMStructGetTypeAtIndex");
+
+extern fn LLVMBool is_packed_struct(
+  LLVMTypeRef struct_ty)
+@cname("LLVMIsPackedStruct");
+
+extern fn LLVMBool is_opaque_struct(
+  LLVMTypeRef struct_ty)
+@cname("LLVMIsOpaqueStruct");
+
+extern fn LLVMBool is_literal_struct(
+  LLVMTypeRef struct_ty)
+@cname("LLVMIsLiteralStruct");
+
+extern fn LLVMTypeRef get_element_type(
+  LLVMTypeRef ty)
+@cname("LLVMGetElementType");
+
+extern fn void get_subtypes(
+  LLVMTypeRef tp,
+  LLVMTypeRef* arr)
+@cname("LLVMGetSubtypes");
+
+extern fn CUInt get_num_contained_types(
+  LLVMTypeRef tp)
+@cname("LLVMGetNumContainedTypes");
+
+extern fn LLVMTypeRef array_type(
+  LLVMTypeRef element_type,
+  CUInt element_count)
+@cname("LLVMArrayType");
+
+extern fn LLVMTypeRef array_type_2(
+  LLVMTypeRef element_type,
+  ulong element_count)
+@cname("LLVMArrayType2");
+
+extern fn CUInt get_array_length(
+  LLVMTypeRef array_ty)
+@cname("LLVMGetArrayLength");
+
+extern fn ulong get_array_length_2(
+  LLVMTypeRef array_ty)
+@cname("LLVMGetArrayLength2");
+
+extern fn LLVMTypeRef pointer_type(
+  LLVMTypeRef element_type,
+  CUInt address_space)
+@cname("LLVMPointerType");
+
+extern fn LLVMBool pointer_type_is_opaque(
+  LLVMTypeRef ty)
+@cname("LLVMPointerTypeIsOpaque");
+
+extern fn LLVMTypeRef pointer_type_in_context(
+  LLVMContextRef c,
+  CUInt address_space)
+@cname("LLVMPointerTypeInContext");
+
+extern fn CUInt get_pointer_address_space(
+  LLVMTypeRef pointer_ty)
+@cname("LLVMGetPointerAddressSpace");
+
+extern fn LLVMTypeRef vector_type(
+  LLVMTypeRef element_type,
+  CUInt element_count)
+@cname("LLVMVectorType");
+
+extern fn LLVMTypeRef scalable_vector_type(
+  LLVMTypeRef element_type,
+  CUInt element_count)
+@cname("LLVMScalableVectorType");
+
+extern fn CUInt get_vector_size(
+  LLVMTypeRef vector_ty)
+@cname("LLVMGetVectorSize");
+
+extern fn LLVMValueRef get_constant_ptr_auth_pointer(
+  LLVMValueRef ptr_auth)
+@cname("LLVMGetConstantPtrAuthPointer");
+
+extern fn LLVMValueRef get_constant_ptr_auth_key(
+  LLVMValueRef ptr_auth)
+@cname("LLVMGetConstantPtrAuthKey");
+
+extern fn LLVMValueRef get_constant_ptr_auth_discriminator(
+  LLVMValueRef ptr_auth)
+@cname("LLVMGetConstantPtrAuthDiscriminator");
+
+extern fn LLVMValueRef get_constant_ptr_auth_addr_discriminator(
+  LLVMValueRef ptr_auth)
+@cname("LLVMGetConstantPtrAuthAddrDiscriminator");
+
+extern fn LLVMTypeRef void_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMVoidTypeInContext");
+
+extern fn LLVMTypeRef label_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMLabelTypeInContext");
+
+extern fn LLVMTypeRef x86_amx_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMX86AMXTypeInContext");
+
+extern fn LLVMTypeRef token_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMTokenTypeInContext");
+
+extern fn LLVMTypeRef metadata_type_in_context(
+  LLVMContextRef c)
+@cname("LLVMMetadataTypeInContext");
+
+extern fn LLVMTypeRef void_type()
+@cname("LLVMVoidType");
+
+extern fn LLVMTypeRef label_type()
+@cname("LLVMLabelType");
+
+extern fn LLVMTypeRef x86_amx_type()
+@cname("LLVMX86AMXType");
+
+extern fn LLVMTypeRef target_ext_type_in_context(
+  LLVMContextRef c,
+  CChar* name,
+  LLVMTypeRef* type_params,
+  CUInt type_param_count,
+  CUInt* int_params,
+  CUInt int_param_count)
+@cname("LLVMTargetExtTypeInContext");
+
+extern fn CChar* get_target_ext_type_name(
+  LLVMTypeRef target_ext_ty)
+@cname("LLVMGetTargetExtTypeName");
+
+extern fn CUInt get_target_ext_type_num_type_params(
+  LLVMTypeRef target_ext_ty)
+@cname("LLVMGetTargetExtTypeNumTypeParams");
+
+extern fn LLVMTypeRef get_target_ext_type_type_param(
+  LLVMTypeRef target_ext_ty,
+  CUInt idx)
+@cname("LLVMGetTargetExtTypeTypeParam");
+
+extern fn CUInt get_target_ext_type_num_int_params(
+  LLVMTypeRef target_ext_ty)
+@cname("LLVMGetTargetExtTypeNumIntParams");
+
+extern fn CUInt get_target_ext_type_int_param(
+  LLVMTypeRef target_ext_ty,
+  CUInt idx)
+@cname("LLVMGetTargetExtTypeIntParam");
+
+extern fn LLVMTypeRef type_of(
+  LLVMValueRef val)
+@cname("LLVMTypeOf");
+
+extern fn LLVMValueKind get_value_kind(
+  LLVMValueRef val)
+@cname("LLVMGetValueKind");
+
+extern fn CChar* get_value_name_2(
+  LLVMValueRef val,
+  sz* length)
+@cname("LLVMGetValueName2");
+
+extern fn void set_value_name_2(
+  LLVMValueRef val,
+  CChar* name,
+  sz name_len)
+@cname("LLVMSetValueName2");
+
+extern fn void dump_value(
+  LLVMValueRef val)
+@cname("LLVMDumpValue");
+
+extern fn CChar* print_value_to_string(
+  LLVMValueRef val)
+@cname("LLVMPrintValueToString");
+
+extern fn LLVMContextRef get_value_context(
+  LLVMValueRef val)
+@cname("LLVMGetValueContext");
+
+extern fn CChar* print_dbg_record_to_string(
+  LLVMDbgRecordRef record)
+@cname("LLVMPrintDbgRecordToString");
+
+extern fn void replace_all_uses_with(
+  LLVMValueRef old_val,
+  LLVMValueRef new_val)
+@cname("LLVMReplaceAllUsesWith");
+
+extern fn LLVMBool is_constant(
+  LLVMValueRef val)
+@cname("LLVMIsConstant");
+
+extern fn LLVMBool is_undef(
+  LLVMValueRef val)
+@cname("LLVMIsUndef");
+
+extern fn LLVMBool is_poison(
+  LLVMValueRef val)
+@cname("LLVMIsPoison");
+
+extern fn LLVMValueRef is_a_argument(
+  LLVMValueRef val)
+@cname("LLVMIsAArgument");
+
+extern fn LLVMValueRef is_a_basic_block(
+  LLVMValueRef val)
+@cname("LLVMIsABasicBlock");
+
+extern fn LLVMValueRef is_a_inline_asm(
+  LLVMValueRef val)
+@cname("LLVMIsAInlineAsm");
+
+extern fn LLVMValueRef is_a_user(
+  LLVMValueRef val)
+@cname("LLVMIsAUser");
+
+extern fn LLVMValueRef is_a_constant(
+  LLVMValueRef val)
+@cname("LLVMIsAConstant");
+
+extern fn LLVMValueRef is_a_block_address(
+  LLVMValueRef val)
+@cname("LLVMIsABlockAddress");
+
+extern fn LLVMValueRef is_a_constant_aggregate_zero(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantAggregateZero");
+
+extern fn LLVMValueRef is_a_constant_array(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantArray");
+
+extern fn LLVMValueRef is_a_constant_data_sequential(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantDataSequential");
+
+extern fn LLVMValueRef is_a_constant_data_array(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantDataArray");
+
+extern fn LLVMValueRef is_a_constant_data_vector(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantDataVector");
+
+extern fn LLVMValueRef is_a_constant_expr(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantExpr");
+
+extern fn LLVMValueRef is_a_constant_fp(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantFP");
+
+extern fn LLVMValueRef is_a_constant_int(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantInt");
+
+extern fn LLVMValueRef is_a_constant_pointer_null(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantPointerNull");
+
+extern fn LLVMValueRef is_a_constant_struct(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantStruct");
+
+extern fn LLVMValueRef is_a_constant_token_none(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantTokenNone");
+
+extern fn LLVMValueRef is_a_constant_vector(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantVector");
+
+extern fn LLVMValueRef is_a_constant_ptr_auth(
+  LLVMValueRef val)
+@cname("LLVMIsAConstantPtrAuth");
+
+extern fn LLVMValueRef is_a_global_value(
+  LLVMValueRef val)
+@cname("LLVMIsAGlobalValue");
+
+extern fn LLVMValueRef is_a_global_alias(
+  LLVMValueRef val)
+@cname("LLVMIsAGlobalAlias");
+
+extern fn LLVMValueRef is_a_global_object(
+  LLVMValueRef val)
+@cname("LLVMIsAGlobalObject");
+
+extern fn LLVMValueRef is_a_function(
+  LLVMValueRef val)
+@cname("LLVMIsAFunction");
+
+extern fn LLVMValueRef is_a_global_variable(
+  LLVMValueRef val)
+@cname("LLVMIsAGlobalVariable");
+
+extern fn LLVMValueRef is_a_global_i_func(
+  LLVMValueRef val)
+@cname("LLVMIsAGlobalIFunc");
+
+extern fn LLVMValueRef is_a_undef_value(
+  LLVMValueRef val)
+@cname("LLVMIsAUndefValue");
+
+extern fn LLVMValueRef is_a_poison_value(
+  LLVMValueRef val)
+@cname("LLVMIsAPoisonValue");
+
+extern fn LLVMValueRef is_a_instruction(
+  LLVMValueRef val)
+@cname("LLVMIsAInstruction");
+
+extern fn LLVMValueRef is_a_unary_operator(
+  LLVMValueRef val)
+@cname("LLVMIsAUnaryOperator");
+
+extern fn LLVMValueRef is_a_binary_operator(
+  LLVMValueRef val)
+@cname("LLVMIsABinaryOperator");
+
+extern fn LLVMValueRef is_a_call_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACallInst");
+
+extern fn LLVMValueRef is_a_intrinsic_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAIntrinsicInst");
+
+extern fn LLVMValueRef is_a_dbg_info_intrinsic(
+  LLVMValueRef val)
+@cname("LLVMIsADbgInfoIntrinsic");
+
+extern fn LLVMValueRef is_a_dbg_variable_intrinsic(
+  LLVMValueRef val)
+@cname("LLVMIsADbgVariableIntrinsic");
+
+extern fn LLVMValueRef is_a_dbg_declare_inst(
+  LLVMValueRef val)
+@cname("LLVMIsADbgDeclareInst");
+
+extern fn LLVMValueRef is_a_dbg_label_inst(
+  LLVMValueRef val)
+@cname("LLVMIsADbgLabelInst");
+
+extern fn LLVMValueRef is_a_mem_intrinsic(
+  LLVMValueRef val)
+@cname("LLVMIsAMemIntrinsic");
+
+extern fn LLVMValueRef is_a_mem_cpy_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAMemCpyInst");
+
+extern fn LLVMValueRef is_a_mem_move_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAMemMoveInst");
+
+extern fn LLVMValueRef is_a_mem_set_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAMemSetInst");
+
+extern fn LLVMValueRef is_a_cmp_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACmpInst");
+
+extern fn LLVMValueRef is_af_cmp_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFCmpInst");
+
+extern fn LLVMValueRef is_ai_cmp_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAICmpInst");
+
+extern fn LLVMValueRef is_a_extract_element_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAExtractElementInst");
+
+extern fn LLVMValueRef is_a_get_element_ptr_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAGetElementPtrInst");
+
+extern fn LLVMValueRef is_a_insert_element_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAInsertElementInst");
+
+extern fn LLVMValueRef is_a_insert_value_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAInsertValueInst");
+
+extern fn LLVMValueRef is_a_landing_pad_inst(
+  LLVMValueRef val)
+@cname("LLVMIsALandingPadInst");
+
+extern fn LLVMValueRef is_aphi_node(
+  LLVMValueRef val)
+@cname("LLVMIsAPHINode");
+
+extern fn LLVMValueRef is_a_select_inst(
+  LLVMValueRef val)
+@cname("LLVMIsASelectInst");
+
+extern fn LLVMValueRef is_a_shuffle_vector_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAShuffleVectorInst");
+
+extern fn LLVMValueRef is_a_store_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAStoreInst");
+
+extern fn LLVMValueRef is_a_branch_inst(
+  LLVMValueRef val)
+@cname("LLVMIsABranchInst");
+
+extern fn LLVMValueRef is_a_indirect_br_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAIndirectBrInst");
+
+extern fn LLVMValueRef is_a_invoke_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAInvokeInst");
+
+extern fn LLVMValueRef is_a_return_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAReturnInst");
+
+extern fn LLVMValueRef is_a_switch_inst(
+  LLVMValueRef val)
+@cname("LLVMIsASwitchInst");
+
+extern fn LLVMValueRef is_a_unreachable_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAUnreachableInst");
+
+extern fn LLVMValueRef is_a_resume_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAResumeInst");
+
+extern fn LLVMValueRef is_a_cleanup_return_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACleanupReturnInst");
+
+extern fn LLVMValueRef is_a_catch_return_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACatchReturnInst");
+
+extern fn LLVMValueRef is_a_catch_switch_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACatchSwitchInst");
+
+extern fn LLVMValueRef is_a_call_br_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACallBrInst");
+
+extern fn LLVMValueRef is_a_funclet_pad_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFuncletPadInst");
+
+extern fn LLVMValueRef is_a_catch_pad_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACatchPadInst");
+
+extern fn LLVMValueRef is_a_cleanup_pad_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACleanupPadInst");
+
+extern fn LLVMValueRef is_a_unary_instruction(
+  LLVMValueRef val)
+@cname("LLVMIsAUnaryInstruction");
+
+extern fn LLVMValueRef is_a_alloca_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAAllocaInst");
+
+extern fn LLVMValueRef is_a_cast_inst(
+  LLVMValueRef val)
+@cname("LLVMIsACastInst");
+
+extern fn LLVMValueRef is_a_addr_space_cast_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAAddrSpaceCastInst");
+
+extern fn LLVMValueRef is_a_bit_cast_inst(
+  LLVMValueRef val)
+@cname("LLVMIsABitCastInst");
+
+extern fn LLVMValueRef is_afp_ext_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFPExtInst");
+
+extern fn LLVMValueRef is_afp_to_si_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFPToSIInst");
+
+extern fn LLVMValueRef is_afp_to_ui_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFPToUIInst");
+
+extern fn LLVMValueRef is_afp_trunc_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFPTruncInst");
+
+extern fn LLVMValueRef is_a_int_to_ptr_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAIntToPtrInst");
+
+extern fn LLVMValueRef is_a_ptr_to_int_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAPtrToIntInst");
+
+extern fn LLVMValueRef is_as_ext_inst(
+  LLVMValueRef val)
+@cname("LLVMIsASExtInst");
+
+extern fn LLVMValueRef is_asi_to_fp_inst(
+  LLVMValueRef val)
+@cname("LLVMIsASIToFPInst");
+
+extern fn LLVMValueRef is_a_trunc_inst(
+  LLVMValueRef val)
+@cname("LLVMIsATruncInst");
+
+extern fn LLVMValueRef is_aui_to_fp_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAUIToFPInst");
+
+extern fn LLVMValueRef is_az_ext_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAZExtInst");
+
+extern fn LLVMValueRef is_a_extract_value_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAExtractValueInst");
+
+extern fn LLVMValueRef is_a_load_inst(
+  LLVMValueRef val)
+@cname("LLVMIsALoadInst");
+
+extern fn LLVMValueRef is_ava_arg_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAVAArgInst");
+
+extern fn LLVMValueRef is_a_freeze_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFreezeInst");
+
+extern fn LLVMValueRef is_a_atomic_cmp_xchg_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAAtomicCmpXchgInst");
+
+extern fn LLVMValueRef is_a_atomic_rmw_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAAtomicRMWInst");
+
+extern fn LLVMValueRef is_a_fence_inst(
+  LLVMValueRef val)
+@cname("LLVMIsAFenceInst");
+
+extern fn LLVMValueRef is_amd_node(
+  LLVMValueRef val)
+@cname("LLVMIsAMDNode");
+
+extern fn LLVMValueRef is_a_value_as_metadata(
+  LLVMValueRef val)
+@cname("LLVMIsAValueAsMetadata");
+
+extern fn LLVMValueRef is_amd_string(
+  LLVMValueRef val)
+@cname("LLVMIsAMDString");
+
+extern fn CChar* get_value_name(
+  LLVMValueRef val)
+@cname("LLVMGetValueName");
+
+extern fn void set_value_name(
+  LLVMValueRef val,
+  CChar* name)
+@cname("LLVMSetValueName");
+
+extern fn LLVMUseRef get_first_use(
+  LLVMValueRef val)
+@cname("LLVMGetFirstUse");
+
+extern fn LLVMUseRef get_next_use(
+  LLVMUseRef u)
+@cname("LLVMGetNextUse");
+
+extern fn LLVMValueRef get_user(
+  LLVMUseRef u)
+@cname("LLVMGetUser");
+
+extern fn LLVMValueRef get_used_value(
+  LLVMUseRef u)
+@cname("LLVMGetUsedValue");
+
+extern fn LLVMValueRef get_operand(
+  LLVMValueRef val,
+  CUInt index)
+@cname("LLVMGetOperand");
+
+extern fn LLVMUseRef get_operand_use(
+  LLVMValueRef val,
+  CUInt index)
+@cname("LLVMGetOperandUse");
+
+extern fn void set_operand(
+  LLVMValueRef user,
+  CUInt index,
+  LLVMValueRef val)
+@cname("LLVMSetOperand");
+
+extern fn CInt get_num_operands(
+  LLVMValueRef val)
+@cname("LLVMGetNumOperands");
+
+extern fn LLVMValueRef const_null(
+  LLVMTypeRef ty)
+@cname("LLVMConstNull");
+
+extern fn LLVMValueRef const_all_ones(
+  LLVMTypeRef ty)
+@cname("LLVMConstAllOnes");
+
+extern fn LLVMValueRef get_undef(
+  LLVMTypeRef ty)
+@cname("LLVMGetUndef");
+
+extern fn LLVMValueRef get_poison(
+  LLVMTypeRef ty)
+@cname("LLVMGetPoison");
+
+extern fn LLVMBool is_null(
+  LLVMValueRef val)
+@cname("LLVMIsNull");
+
+extern fn LLVMValueRef const_pointer_null(
+  LLVMTypeRef ty)
+@cname("LLVMConstPointerNull");
+
+extern fn LLVMValueRef const_int(
+  LLVMTypeRef int_ty,
+  CULongLong n,
+  LLVMBool sign_extend)
+@cname("LLVMConstInt");
+
+extern fn LLVMValueRef const_int_of_arbitrary_precision(
+  LLVMTypeRef int_ty,
+  CUInt num_words,
+  ulong* words)
+@cname("LLVMConstIntOfArbitraryPrecision");
+
+extern fn LLVMValueRef const_int_of_string(
+  LLVMTypeRef int_ty,
+  CChar* text,
+  char radix)
+@cname("LLVMConstIntOfString");
+
+extern fn LLVMValueRef const_int_of_string_and_size(
+  LLVMTypeRef int_ty,
+  CChar* text,
+  CUInt s_len,
+  char radix)
+@cname("LLVMConstIntOfStringAndSize");
+
+extern fn LLVMValueRef const_real(
+  LLVMTypeRef real_ty,
+  double n)
+@cname("LLVMConstReal");
+
+extern fn LLVMValueRef const_real_of_string(
+  LLVMTypeRef real_ty,
+  CChar* text)
+@cname("LLVMConstRealOfString");
+
+extern fn LLVMValueRef const_real_of_string_and_size(
+  LLVMTypeRef real_ty,
+  CChar* text,
+  CUInt s_len)
+@cname("LLVMConstRealOfStringAndSize");
+
+extern fn LLVMValueRef const_fp_from_bits(
+  LLVMTypeRef ty,
+  ulong* n)
+@cname("LLVMConstFPFromBits");
+
+extern fn CULongLong const_int_get_z_ext_value(
+  LLVMValueRef constant_val)
+@cname("LLVMConstIntGetZExtValue");
+
+extern fn CLongLong const_int_get_s_ext_value(
+  LLVMValueRef constant_val)
+@cname("LLVMConstIntGetSExtValue");
+
+extern fn double const_real_get_double(
+  LLVMValueRef constant_val,
+  LLVMBool* loses_info)
+@cname("LLVMConstRealGetDouble");
+
+extern fn LLVMValueRef const_string_in_context(
+  LLVMContextRef c,
+  CChar* str,
+  CUInt length,
+  LLVMBool dont_null_terminate)
+@cname("LLVMConstStringInContext");
+
+extern fn LLVMValueRef const_string_in_context_2(
+  LLVMContextRef c,
+  CChar* str,
+  sz length,
+  LLVMBool dont_null_terminate)
+@cname("LLVMConstStringInContext2");
+
+extern fn LLVMValueRef const_string(
+  CChar* str,
+  CUInt length,
+  LLVMBool dont_null_terminate)
+@cname("LLVMConstString");
+
+extern fn LLVMBool is_constant_string(
+  LLVMValueRef c)
+@cname("LLVMIsConstantString");
+
+extern fn CChar* get_as_string(
+  LLVMValueRef c,
+  sz* length)
+@cname("LLVMGetAsString");
+
+extern fn CChar* get_raw_data_values(
+  LLVMValueRef c,
+  sz* size_in_bytes)
+@cname("LLVMGetRawDataValues");
+
+extern fn LLVMValueRef const_struct_in_context(
+  LLVMContextRef c,
+  LLVMValueRef* constant_vals,
+  CUInt count,
+  LLVMBool packed)
+@cname("LLVMConstStructInContext");
+
+extern fn LLVMValueRef const_struct(
+  LLVMValueRef* constant_vals,
+  CUInt count,
+  LLVMBool packed)
+@cname("LLVMConstStruct");
+
+extern fn LLVMValueRef const_array(
+  LLVMTypeRef element_ty,
+  LLVMValueRef* constant_vals,
+  CUInt length)
+@cname("LLVMConstArray");
+
+extern fn LLVMValueRef const_array_2(
+  LLVMTypeRef element_ty,
+  LLVMValueRef* constant_vals,
+  ulong length)
+@cname("LLVMConstArray2");
+
+extern fn LLVMValueRef const_data_array(
+  LLVMTypeRef element_ty,
+  CChar* data,
+  sz size_in_bytes)
+@cname("LLVMConstDataArray");
+
+extern fn LLVMValueRef const_named_struct(
+  LLVMTypeRef struct_ty,
+  LLVMValueRef* constant_vals,
+  CUInt count)
+@cname("LLVMConstNamedStruct");
+
+extern fn LLVMValueRef get_aggregate_element(
+  LLVMValueRef c,
+  CUInt idx)
+@cname("LLVMGetAggregateElement");
+
+extern fn LLVMValueRef get_element_as_constant(
+  LLVMValueRef c,
+  CUInt idx)
+@cname("LLVMGetElementAsConstant");
+
+extern fn LLVMValueRef const_vector(
+  LLVMValueRef* scalar_constant_vals,
+  CUInt size)
+@cname("LLVMConstVector");
+
+extern fn LLVMValueRef constant_ptr_auth(
+  LLVMValueRef ptr,
+  LLVMValueRef key,
+  LLVMValueRef disc,
+  LLVMValueRef addr_disc)
+@cname("LLVMConstantPtrAuth");
+
+extern fn LLVMOpcode get_const_opcode(
+  LLVMValueRef constant_val)
+@cname("LLVMGetConstOpcode");
+
+extern fn LLVMValueRef align_of(
+  LLVMTypeRef ty)
+@cname("LLVMAlignOf");
+
+extern fn LLVMValueRef size_of(
+  LLVMTypeRef ty)
+@cname("LLVMSizeOf");
+
+extern fn LLVMValueRef const_neg(
+  LLVMValueRef constant_val)
+@cname("LLVMConstNeg");
+
+extern fn LLVMValueRef const_nsw_neg(
+  LLVMValueRef constant_val)
+@cname("LLVMConstNSWNeg");
+
+extern fn LLVMValueRef const_nuw_neg(
+  LLVMValueRef constant_val)
+@cname("LLVMConstNUWNeg");
+
+extern fn LLVMValueRef const_not(
+  LLVMValueRef constant_val)
+@cname("LLVMConstNot");
+
+extern fn LLVMValueRef const_add(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstAdd");
+
+extern fn LLVMValueRef const_nsw_add(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstNSWAdd");
+
+extern fn LLVMValueRef const_nuw_add(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstNUWAdd");
+
+extern fn LLVMValueRef const_sub(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstSub");
+
+extern fn LLVMValueRef const_nsw_sub(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstNSWSub");
+
+extern fn LLVMValueRef const_nuw_sub(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstNUWSub");
+
+extern fn LLVMValueRef const_xor(
+  LLVMValueRef lhs_constant,
+  LLVMValueRef rhs_constant)
+@cname("LLVMConstXor");
+
+extern fn LLVMValueRef const_gep2(
+  LLVMTypeRef ty,
+  LLVMValueRef constant_val,
+  LLVMValueRef* constant_indices,
+  CUInt num_indices)
+@cname("LLVMConstGEP2");
+
+extern fn LLVMValueRef const_in_bounds_gep2(
+  LLVMTypeRef ty,
+  LLVMValueRef constant_val,
+  LLVMValueRef* constant_indices,
+  CUInt num_indices)
+@cname("LLVMConstInBoundsGEP2");
+
+extern fn LLVMValueRef const_gep_with_no_wrap_flags(
+  LLVMTypeRef ty,
+  LLVMValueRef constant_val,
+  LLVMValueRef* constant_indices,
+  CUInt num_indices,
+  LLVMGEPNoWrapFlags no_wrap_flags)
+@cname("LLVMConstGEPWithNoWrapFlags");
+
+extern fn LLVMValueRef const_trunc(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstTrunc");
+
+extern fn LLVMValueRef const_ptr_to_int(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstPtrToInt");
+
+extern fn LLVMValueRef const_int_to_ptr(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstIntToPtr");
+
+extern fn LLVMValueRef const_bit_cast(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstBitCast");
+
+extern fn LLVMValueRef const_addr_space_cast(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstAddrSpaceCast");
+
+extern fn LLVMValueRef const_trunc_or_bit_cast(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstTruncOrBitCast");
+
+extern fn LLVMValueRef const_pointer_cast(
+  LLVMValueRef constant_val,
+  LLVMTypeRef to_type)
+@cname("LLVMConstPointerCast");
+
+extern fn LLVMValueRef const_extract_element(
+  LLVMValueRef vector_constant,
+  LLVMValueRef index_constant)
+@cname("LLVMConstExtractElement");
+
+extern fn LLVMValueRef const_insert_element(
+  LLVMValueRef vector_constant,
+  LLVMValueRef element_value_constant,
+  LLVMValueRef index_constant)
+@cname("LLVMConstInsertElement");
+
+extern fn LLVMValueRef const_shuffle_vector(
+  LLVMValueRef vector_a_constant,
+  LLVMValueRef vector_b_constant,
+  LLVMValueRef mask_constant)
+@cname("LLVMConstShuffleVector");
+
+extern fn LLVMValueRef block_address(
+  LLVMValueRef f,
+  LLVMBasicBlockRef bb)
+@cname("LLVMBlockAddress");
+
+extern fn LLVMValueRef get_block_address_function(
+  LLVMValueRef block_addr)
+@cname("LLVMGetBlockAddressFunction");
+
+extern fn LLVMBasicBlockRef get_block_address_basic_block(
+  LLVMValueRef block_addr)
+@cname("LLVMGetBlockAddressBasicBlock");
+
+extern fn LLVMValueRef const_inline_asm(
+  LLVMTypeRef ty,
+  CChar* asm_string,
+  CChar* constraints,
+  LLVMBool has_side_effects,
+  LLVMBool is_align_stack)
+@cname("LLVMConstInlineAsm");
+
+extern fn LLVMModuleRef get_global_parent(
+  LLVMValueRef global)
+@cname("LLVMGetGlobalParent");
+
+extern fn LLVMBool is_declaration(
+  LLVMValueRef global)
+@cname("LLVMIsDeclaration");
+
+extern fn LLVMLinkage get_linkage(
+  LLVMValueRef global)
+@cname("LLVMGetLinkage");
+
+extern fn void set_linkage(
+  LLVMValueRef global,
+  LLVMLinkage linkage)
+@cname("LLVMSetLinkage");
+
+extern fn CChar* get_section(
+  LLVMValueRef global)
+@cname("LLVMGetSection");
+
+extern fn void set_section(
+  LLVMValueRef global,
+  CChar* section)
+@cname("LLVMSetSection");
+
+extern fn LLVMVisibility get_visibility(
+  LLVMValueRef global)
+@cname("LLVMGetVisibility");
+
+extern fn void set_visibility(
+  LLVMValueRef global,
+  LLVMVisibility viz)
+@cname("LLVMSetVisibility");
+
+extern fn LLVMDLLStorageClass get_dll_storage_class(
+  LLVMValueRef global)
+@cname("LLVMGetDLLStorageClass");
+
+extern fn void set_dll_storage_class(
+  LLVMValueRef global,
+  LLVMDLLStorageClass class)
+@cname("LLVMSetDLLStorageClass");
+
+extern fn LLVMUnnamedAddr get_unnamed_address(
+  LLVMValueRef global)
+@cname("LLVMGetUnnamedAddress");
+
+extern fn void set_unnamed_address(
+  LLVMValueRef global,
+  LLVMUnnamedAddr unnamed_addr)
+@cname("LLVMSetUnnamedAddress");
+
+extern fn LLVMTypeRef global_get_value_type(
+  LLVMValueRef global)
+@cname("LLVMGlobalGetValueType");
+
+extern fn LLVMBool has_unnamed_addr(
+  LLVMValueRef global)
+@cname("LLVMHasUnnamedAddr");
+
+extern fn void set_unnamed_addr(
+  LLVMValueRef global,
+  LLVMBool has_unnamed_addr)
+@cname("LLVMSetUnnamedAddr");
+
+extern fn CUInt get_alignment(
+  LLVMValueRef v)
+@cname("LLVMGetAlignment");
+
+extern fn void set_alignment(
+  LLVMValueRef v,
+  CUInt bytes)
+@cname("LLVMSetAlignment");
+
+extern fn void global_set_metadata(
+  LLVMValueRef global,
+  CUInt kind,
+  LLVMMetadataRef md)
+@cname("LLVMGlobalSetMetadata");
+
+extern fn void global_add_metadata(
+  LLVMValueRef global,
+  CUInt kind,
+  LLVMMetadataRef md)
+@cname("LLVMGlobalAddMetadata");
+
+extern fn void global_erase_metadata(
+  LLVMValueRef global,
+  CUInt kind)
+@cname("LLVMGlobalEraseMetadata");
+
+extern fn void global_clear_metadata(
+  LLVMValueRef global)
+@cname("LLVMGlobalClearMetadata");
+
+extern fn void global_add_debug_info(
+  LLVMValueRef global,
+  LLVMMetadataRef gve)
+@cname("LLVMGlobalAddDebugInfo");
+
+extern fn LLVMValueMetadataEntry* global_copy_all_metadata(
+  LLVMValueRef value,
+  sz* num_entries)
+@cname("LLVMGlobalCopyAllMetadata");
+
+extern fn void dispose_value_metadata_entries(
+  LLVMValueMetadataEntry* entries)
+@cname("LLVMDisposeValueMetadataEntries");
+
+extern fn CUInt value_metadata_entries_get_kind(
+  LLVMValueMetadataEntry* entries,
+  CUInt index)
+@cname("LLVMValueMetadataEntriesGetKind");
+
+extern fn LLVMMetadataRef value_metadata_entries_get_metadata(
+  LLVMValueMetadataEntry* entries,
+  CUInt index)
+@cname("LLVMValueMetadataEntriesGetMetadata");
+
+extern fn LLVMValueRef add_global(
+  LLVMModuleRef m,
+  LLVMTypeRef ty,
+  CChar* name)
+@cname("LLVMAddGlobal");
+
+extern fn LLVMValueRef add_global_in_address_space(
+  LLVMModuleRef m,
+  LLVMTypeRef ty,
+  CChar* name,
+  CUInt address_space)
+@cname("LLVMAddGlobalInAddressSpace");
+
+extern fn LLVMValueRef get_named_global(
+  LLVMModuleRef m,
+  CChar* name)
+@cname("LLVMGetNamedGlobal");
+
+extern fn LLVMValueRef get_named_global_with_length(
+  LLVMModuleRef m,
+  CChar* name,
+  sz length)
+@cname("LLVMGetNamedGlobalWithLength");
+
+extern fn LLVMValueRef get_first_global(
+  LLVMModuleRef m)
+@cname("LLVMGetFirstGlobal");
+
+extern fn LLVMValueRef get_last_global(
+  LLVMModuleRef m)
+@cname("LLVMGetLastGlobal");
+
+extern fn LLVMValueRef get_next_global(
+  LLVMValueRef global_var)
+@cname("LLVMGetNextGlobal");
+
+extern fn LLVMValueRef get_previous_global(
+  LLVMValueRef global_var)
+@cname("LLVMGetPreviousGlobal");
+
+extern fn void delete_global(
+  LLVMValueRef global_var)
+@cname("LLVMDeleteGlobal");
+
+extern fn LLVMValueRef get_initializer(
+  LLVMValueRef global_var)
+@cname("LLVMGetInitializer");
+
+extern fn void set_initializer(
+  LLVMValueRef global_var,
+  LLVMValueRef constant_val)
+@cname("LLVMSetInitializer");
+
+extern fn LLVMBool is_thread_local(
+  LLVMValueRef global_var)
+@cname("LLVMIsThreadLocal");
+
+extern fn void set_thread_local(
+  LLVMValueRef global_var,
+  LLVMBool is_thread_local)
+@cname("LLVMSetThreadLocal");
+
+extern fn LLVMBool is_global_constant(
+  LLVMValueRef global_var)
+@cname("LLVMIsGlobalConstant");
+
+extern fn void set_global_constant(
+  LLVMValueRef global_var,
+  LLVMBool is_constant)
+@cname("LLVMSetGlobalConstant");
+
+extern fn LLVMThreadLocalMode get_thread_local_mode(
+  LLVMValueRef global_var)
+@cname("LLVMGetThreadLocalMode");
+
+extern fn void set_thread_local_mode(
+  LLVMValueRef global_var,
+  LLVMThreadLocalMode mode)
+@cname("LLVMSetThreadLocalMode");
+
+extern fn LLVMBool is_externally_initialized(
+  LLVMValueRef global_var)
+@cname("LLVMIsExternallyInitialized");
+
+extern fn void set_externally_initialized(
+  LLVMValueRef global_var,
+  LLVMBool is_ext_init)
+@cname("LLVMSetExternallyInitialized");
+
+extern fn LLVMValueRef add_alias_2(
+  LLVMModuleRef m,
+  LLVMTypeRef value_ty,
+  CUInt addr_space,
+  LLVMValueRef aliasee,
+  CChar* name)
+@cname("LLVMAddAlias2");
+
+extern fn LLVMValueRef get_named_global_alias(
+  LLVMModuleRef m,
+  CChar* name,
+  sz name_len)
+@cname("LLVMGetNamedGlobalAlias");
+
+extern fn LLVMValueRef get_first_global_alias(
+  LLVMModuleRef m)
+@cname("LLVMGetFirstGlobalAlias");
+
+extern fn LLVMValueRef get_last_global_alias(
+  LLVMModuleRef m)
+@cname("LLVMGetLastGlobalAlias");
+
+extern fn LLVMValueRef get_next_global_alias(
+  LLVMValueRef ga)
+@cname("LLVMGetNextGlobalAlias");
+
+extern fn LLVMValueRef get_previous_global_alias(
+  LLVMValueRef ga)
+@cname("LLVMGetPreviousGlobalAlias");
+
+extern fn LLVMValueRef alias_get_aliasee(
+  LLVMValueRef _alias)
+@cname("LLVMAliasGetAliasee");
+
+extern fn void alias_set_aliasee(
+  LLVMValueRef _alias,
+  LLVMValueRef aliasee)
+@cname("LLVMAliasSetAliasee");
+
+extern fn void delete_function(
+  LLVMValueRef _fn)
+@cname("LLVMDeleteFunction");
+
+extern fn LLVMBool has_personality_fn(
+  LLVMValueRef _fn)
+@cname("LLVMHasPersonalityFn");
+
+extern fn LLVMValueRef get_personality_fn(
+  LLVMValueRef _fn)
+@cname("LLVMGetPersonalityFn");
+
+extern fn void set_personality_fn(
+  LLVMValueRef _fn,
+  LLVMValueRef personality_fn)
+@cname("LLVMSetPersonalityFn");
+
+extern fn CUInt lookup_intrinsic_id(
+  CChar* name,
+  sz name_len)
+@cname("LLVMLookupIntrinsicID");
+
+extern fn CUInt get_intrinsic_id(
+  LLVMValueRef _fn)
+@cname("LLVMGetIntrinsicID");
+
+extern fn LLVMValueRef get_intrinsic_declaration(
+  LLVMModuleRef mod,
+  CUInt id,
+  LLVMTypeRef* param_types,
+  sz param_count)
+@cname("LLVMGetIntrinsicDeclaration");
+
+extern fn LLVMTypeRef intrinsic_get_type(
+  LLVMContextRef ctx,
+  CUInt id,
+  LLVMTypeRef* param_types,
+  sz param_count)
+@cname("LLVMIntrinsicGetType");
+
+extern fn CChar* intrinsic_get_name(
+  CUInt id,
+  sz* name_length)
+@cname("LLVMIntrinsicGetName");
+
+extern fn CChar* intrinsic_copy_overloaded_name(
+  CUInt id,
+  LLVMTypeRef* param_types,
+  sz param_count,
+  sz* name_length)
+@cname("LLVMIntrinsicCopyOverloadedName");
+
+extern fn CChar* intrinsic_copy_overloaded_name_2(
+  LLVMModuleRef mod,
+  CUInt id,
+  LLVMTypeRef* param_types,
+  sz param_count,
+  sz* name_length)
+@cname("LLVMIntrinsicCopyOverloadedName2");
+
+extern fn LLVMBool intrinsic_is_overloaded(
+  CUInt id)
+@cname("LLVMIntrinsicIsOverloaded");
+
+extern fn CUInt get_function_call_conv(
+  LLVMValueRef _fn)
+@cname("LLVMGetFunctionCallConv");
+
+extern fn void set_function_call_conv(
+  LLVMValueRef _fn,
+  CUInt cc)
+@cname("LLVMSetFunctionCallConv");
+
+extern fn CChar* get_gc(
+  LLVMValueRef _fn)
+@cname("LLVMGetGC");
+
+extern fn void set_gc(
+  LLVMValueRef _fn,
+  CChar* name)
+@cname("LLVMSetGC");
+
+extern fn LLVMValueRef get_prefix_data(
+  LLVMValueRef _fn)
+@cname("LLVMGetPrefixData");
+
+extern fn LLVMBool has_prefix_data(
+  LLVMValueRef _fn)
+@cname("LLVMHasPrefixData");
+
+extern fn void set_prefix_data(
+  LLVMValueRef _fn,
+  LLVMValueRef prefix_data)
+@cname("LLVMSetPrefixData");
+
+extern fn LLVMValueRef get_prologue_data(
+  LLVMValueRef _fn)
+@cname("LLVMGetPrologueData");
+
+extern fn LLVMBool has_prologue_data(
+  LLVMValueRef _fn)
+@cname("LLVMHasPrologueData");
+
+extern fn void set_prologue_data(
+  LLVMValueRef _fn,
+  LLVMValueRef prologue_data)
+@cname("LLVMSetPrologueData");
+
+extern fn void add_attribute_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx,
+  LLVMAttributeRef a)
+@cname("LLVMAddAttributeAtIndex");
+
+extern fn CUInt get_attribute_count_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx)
+@cname("LLVMGetAttributeCountAtIndex");
+
+extern fn void get_attributes_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx,
+  LLVMAttributeRef* attrs)
+@cname("LLVMGetAttributesAtIndex");
+
+extern fn LLVMAttributeRef get_enum_attribute_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx,
+  CUInt kind_id)
+@cname("LLVMGetEnumAttributeAtIndex");
+
+extern fn LLVMAttributeRef get_string_attribute_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx,
+  CChar* k,
+  CUInt k_len)
+@cname("LLVMGetStringAttributeAtIndex");
+
+extern fn void remove_enum_attribute_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx,
+  CUInt kind_id)
+@cname("LLVMRemoveEnumAttributeAtIndex");
+
+extern fn void remove_string_attribute_at_index(
+  LLVMValueRef f,
+  LLVMAttributeIndex idx,
+  CChar* k,
+  CUInt k_len)
+@cname("LLVMRemoveStringAttributeAtIndex");
+
+extern fn void add_target_dependent_function_attr(
+  LLVMValueRef _fn,
+  CChar* a,
+  CChar* v)
+@cname("LLVMAddTargetDependentFunctionAttr");
+
+extern fn CUInt count_params(
+  LLVMValueRef _fn)
+@cname("LLVMCountParams");
+
+extern fn void get_params(
+  LLVMValueRef _fn,
+  LLVMValueRef* params)
+@cname("LLVMGetParams");
+
+extern fn LLVMValueRef get_param(
+  LLVMValueRef _fn,
+  CUInt index)
+@cname("LLVMGetParam");
+
+extern fn LLVMValueRef get_param_parent(
+  LLVMValueRef inst)
+@cname("LLVMGetParamParent");
+
+extern fn LLVMValueRef get_first_param(
+  LLVMValueRef _fn)
+@cname("LLVMGetFirstParam");
+
+extern fn LLVMValueRef get_last_param(
+  LLVMValueRef _fn)
+@cname("LLVMGetLastParam");
+
+extern fn LLVMValueRef get_next_param(
+  LLVMValueRef arg)
+@cname("LLVMGetNextParam");
+
+extern fn LLVMValueRef get_previous_param(
+  LLVMValueRef arg)
+@cname("LLVMGetPreviousParam");
+
+extern fn void set_param_alignment(
+  LLVMValueRef arg,
+  CUInt align)
+@cname("LLVMSetParamAlignment");
+
+extern fn LLVMValueRef add_global_i_func(
+  LLVMModuleRef m,
+  CChar* name,
+  sz name_len,
+  LLVMTypeRef ty,
+  CUInt addr_space,
+  LLVMValueRef resolver)
+@cname("LLVMAddGlobalIFunc");
+
+extern fn LLVMValueRef get_named_global_i_func(
+  LLVMModuleRef m,
+  CChar* name,
+  sz name_len)
+@cname("LLVMGetNamedGlobalIFunc");
+
+extern fn LLVMValueRef get_first_global_i_func(
+  LLVMModuleRef m)
+@cname("LLVMGetFirstGlobalIFunc");
+
+extern fn LLVMValueRef get_last_global_i_func(
+  LLVMModuleRef m)
+@cname("LLVMGetLastGlobalIFunc");
+
+extern fn LLVMValueRef get_next_global_i_func(
+  LLVMValueRef i_func)
+@cname("LLVMGetNextGlobalIFunc");
+
+extern fn LLVMValueRef get_previous_global_i_func(
+  LLVMValueRef i_func)
+@cname("LLVMGetPreviousGlobalIFunc");
+
+extern fn LLVMValueRef get_global_i_func_resolver(
+  LLVMValueRef i_func)
+@cname("LLVMGetGlobalIFuncResolver");
+
+extern fn void set_global_i_func_resolver(
+  LLVMValueRef i_func,
+  LLVMValueRef resolver)
+@cname("LLVMSetGlobalIFuncResolver");
+
+extern fn void erase_global_i_func(
+  LLVMValueRef i_func)
+@cname("LLVMEraseGlobalIFunc");
+
+extern fn void remove_global_i_func(
+  LLVMValueRef i_func)
+@cname("LLVMRemoveGlobalIFunc");
+
+extern fn LLVMMetadataRef md_string_in_context_2(
+  LLVMContextRef c,
+  CChar* str,
+  sz s_len)
+@cname("LLVMMDStringInContext2");
+
+extern fn LLVMMetadataRef md_node_in_context_2(
+  LLVMContextRef c,
+  LLVMMetadataRef* m_ds,
+  sz count)
+@cname("LLVMMDNodeInContext2");
+
+extern fn LLVMValueRef metadata_as_value(
+  LLVMContextRef c,
+  LLVMMetadataRef md)
+@cname("LLVMMetadataAsValue");
+
+extern fn LLVMMetadataRef value_as_metadata(
+  LLVMValueRef val)
+@cname("LLVMValueAsMetadata");
+
+extern fn CChar* get_md_string(
+  LLVMValueRef v,
+  CUInt* length)
+@cname("LLVMGetMDString");
+
+extern fn CUInt get_md_node_num_operands(
+  LLVMValueRef v)
+@cname("LLVMGetMDNodeNumOperands");
+
+extern fn void get_md_node_operands(
+  LLVMValueRef v,
+  LLVMValueRef* dest)
+@cname("LLVMGetMDNodeOperands");
+
+extern fn void replace_md_node_operand_with(
+  LLVMValueRef v,
+  CUInt index,
+  LLVMMetadataRef replacement)
+@cname("LLVMReplaceMDNodeOperandWith");
+
+extern fn LLVMValueRef md_string_in_context(
+  LLVMContextRef c,
+  CChar* str,
+  CUInt s_len)
+@cname("LLVMMDStringInContext");
+
+extern fn LLVMValueRef md_string(
+  CChar* str,
+  CUInt s_len)
+@cname("LLVMMDString");
+
+extern fn LLVMValueRef md_node_in_context(
+  LLVMContextRef c,
+  LLVMValueRef* vals,
+  CUInt count)
+@cname("LLVMMDNodeInContext");
+
+extern fn LLVMValueRef md_node(
+  LLVMValueRef* vals,
+  CUInt count)
+@cname("LLVMMDNode");
+
+extern fn LLVMOperandBundleRef create_operand_bundle(
+  CChar* tag,
+  sz tag_len,
+  LLVMValueRef* args,
+  CUInt num_args)
+@cname("LLVMCreateOperandBundle");
+
+extern fn void dispose_operand_bundle(
+  LLVMOperandBundleRef bundle)
+@cname("LLVMDisposeOperandBundle");
+
+extern fn CChar* get_operand_bundle_tag(
+  LLVMOperandBundleRef bundle,
+  sz* len)
+@cname("LLVMGetOperandBundleTag");
+
+extern fn CUInt get_num_operand_bundle_args(
+  LLVMOperandBundleRef bundle)
+@cname("LLVMGetNumOperandBundleArgs");
+
+extern fn LLVMValueRef get_operand_bundle_arg_at_index(
+  LLVMOperandBundleRef bundle,
+  CUInt index)
+@cname("LLVMGetOperandBundleArgAtIndex");
+
+extern fn LLVMValueRef basic_block_as_value(
+  LLVMBasicBlockRef bb)
+@cname("LLVMBasicBlockAsValue");
+
+extern fn LLVMBool value_is_basic_block(
+  LLVMValueRef val)
+@cname("LLVMValueIsBasicBlock");
+
+extern fn LLVMBasicBlockRef value_as_basic_block(
+  LLVMValueRef val)
+@cname("LLVMValueAsBasicBlock");
+
+extern fn CChar* get_basic_block_name(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetBasicBlockName");
+
+extern fn LLVMValueRef get_basic_block_parent(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetBasicBlockParent");
+
+extern fn LLVMValueRef get_basic_block_terminator(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetBasicBlockTerminator");
+
+extern fn CUInt count_basic_blocks(
+  LLVMValueRef _fn)
+@cname("LLVMCountBasicBlocks");
+
+extern fn void get_basic_blocks(
+  LLVMValueRef _fn,
+  LLVMBasicBlockRef* basic_blocks)
+@cname("LLVMGetBasicBlocks");
+
+extern fn LLVMBasicBlockRef get_first_basic_block(
+  LLVMValueRef _fn)
+@cname("LLVMGetFirstBasicBlock");
+
+extern fn LLVMBasicBlockRef get_last_basic_block(
+  LLVMValueRef _fn)
+@cname("LLVMGetLastBasicBlock");
+
+extern fn LLVMBasicBlockRef get_next_basic_block(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetNextBasicBlock");
+
+extern fn LLVMBasicBlockRef get_previous_basic_block(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetPreviousBasicBlock");
+
+extern fn LLVMBasicBlockRef get_entry_basic_block(
+  LLVMValueRef _fn)
+@cname("LLVMGetEntryBasicBlock");
+
+extern fn void insert_existing_basic_block_after_insert_block(
+  LLVMBuilderRef builder,
+  LLVMBasicBlockRef bb)
+@cname("LLVMInsertExistingBasicBlockAfterInsertBlock");
+
+extern fn void append_existing_basic_block(
+  LLVMValueRef _fn,
+  LLVMBasicBlockRef bb)
+@cname("LLVMAppendExistingBasicBlock");
+
+extern fn LLVMBasicBlockRef create_basic_block_in_context(
+  LLVMContextRef c,
+  CChar* name)
+@cname("LLVMCreateBasicBlockInContext");
+
+extern fn LLVMBasicBlockRef append_basic_block_in_context(
+  LLVMContextRef c,
+  LLVMValueRef _fn,
+  CChar* name)
+@cname("LLVMAppendBasicBlockInContext");
+
+extern fn LLVMBasicBlockRef append_basic_block(
+  LLVMValueRef _fn,
+  CChar* name)
+@cname("LLVMAppendBasicBlock");
+
+extern fn LLVMBasicBlockRef insert_basic_block_in_context(
+  LLVMContextRef c,
+  LLVMBasicBlockRef bb,
+  CChar* name)
+@cname("LLVMInsertBasicBlockInContext");
+
+extern fn LLVMBasicBlockRef insert_basic_block(
+  LLVMBasicBlockRef insert_before_bb,
+  CChar* name)
+@cname("LLVMInsertBasicBlock");
+
+extern fn void delete_basic_block(
+  LLVMBasicBlockRef bb)
+@cname("LLVMDeleteBasicBlock");
+
+extern fn void remove_basic_block_from_parent(
+  LLVMBasicBlockRef bb)
+@cname("LLVMRemoveBasicBlockFromParent");
+
+extern fn void move_basic_block_before(
+  LLVMBasicBlockRef bb,
+  LLVMBasicBlockRef move_pos)
+@cname("LLVMMoveBasicBlockBefore");
+
+extern fn void move_basic_block_after(
+  LLVMBasicBlockRef bb,
+  LLVMBasicBlockRef move_pos)
+@cname("LLVMMoveBasicBlockAfter");
+
+extern fn LLVMValueRef get_first_instruction(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetFirstInstruction");
+
+extern fn LLVMValueRef get_last_instruction(
+  LLVMBasicBlockRef bb)
+@cname("LLVMGetLastInstruction");
+
+extern fn CInt has_metadata(
+  LLVMValueRef val)
+@cname("LLVMHasMetadata");
+
+extern fn LLVMValueRef get_metadata(
+  LLVMValueRef val,
+  CUInt kind_id)
+@cname("LLVMGetMetadata");
+
+extern fn void set_metadata(
+  LLVMValueRef val,
+  CUInt kind_id,
+  LLVMValueRef node)
+@cname("LLVMSetMetadata");
+
+extern fn LLVMValueMetadataEntry* instruction_get_all_metadata_other_than_debug_loc(
+  LLVMValueRef instr,
+  sz* num_entries)
+@cname("LLVMInstructionGetAllMetadataOtherThanDebugLoc");
+
+extern fn LLVMBasicBlockRef get_instruction_parent(
+  LLVMValueRef inst)
+@cname("LLVMGetInstructionParent");
+
+extern fn LLVMValueRef get_next_instruction(
+  LLVMValueRef inst)
+@cname("LLVMGetNextInstruction");
+
+extern fn LLVMValueRef get_previous_instruction(
+  LLVMValueRef inst)
+@cname("LLVMGetPreviousInstruction");
+
+extern fn void instruction_remove_from_parent(
+  LLVMValueRef inst)
+@cname("LLVMInstructionRemoveFromParent");
+
+extern fn void instruction_erase_from_parent(
+  LLVMValueRef inst)
+@cname("LLVMInstructionEraseFromParent");
+
+extern fn void delete_instruction(
+  LLVMValueRef inst)
+@cname("LLVMDeleteInstruction");
+
+extern fn LLVMOpcode get_instruction_opcode(
+  LLVMValueRef inst)
+@cname("LLVMGetInstructionOpcode");
+
+extern fn LLVMIntPredicate get_i_cmp_predicate(
+  LLVMValueRef inst)
+@cname("LLVMGetICmpPredicate");
+
+extern fn LLVMBool get_i_cmp_same_sign(
+  LLVMValueRef inst)
+@cname("LLVMGetICmpSameSign");
+
+extern fn void set_i_cmp_same_sign(
+  LLVMValueRef inst,
+  LLVMBool same_sign)
+@cname("LLVMSetICmpSameSign");
+
+extern fn LLVMRealPredicate get_f_cmp_predicate(
+  LLVMValueRef inst)
+@cname("LLVMGetFCmpPredicate");
+
+extern fn LLVMValueRef instruction_clone(
+  LLVMValueRef inst)
+@cname("LLVMInstructionClone");
+
+extern fn LLVMValueRef is_a_terminator_inst(
+  LLVMValueRef inst)
+@cname("LLVMIsATerminatorInst");
+
+extern fn LLVMDbgRecordRef get_first_dbg_record(
+  LLVMValueRef inst)
+@cname("LLVMGetFirstDbgRecord");
+
+extern fn LLVMDbgRecordRef get_last_dbg_record(
+  LLVMValueRef inst)
+@cname("LLVMGetLastDbgRecord");
+
+extern fn LLVMDbgRecordRef get_next_dbg_record(
+  LLVMDbgRecordRef dbg_record)
+@cname("LLVMGetNextDbgRecord");
+
+extern fn LLVMDbgRecordRef get_previous_dbg_record(
+  LLVMDbgRecordRef dbg_record)
+@cname("LLVMGetPreviousDbgRecord");
+
+extern fn LLVMMetadataRef dbg_record_get_debug_loc(
+  LLVMDbgRecordRef rec)
+@cname("LLVMDbgRecordGetDebugLoc");
+
+extern fn LLVMDbgRecordKind dbg_record_get_kind(
+  LLVMDbgRecordRef rec)
+@cname("LLVMDbgRecordGetKind");
+
+extern fn LLVMValueRef dbg_variable_record_get_value(
+  LLVMDbgRecordRef rec,
+  CUInt op_idx)
+@cname("LLVMDbgVariableRecordGetValue");
+
+extern fn LLVMMetadataRef dbg_variable_record_get_variable(
+  LLVMDbgRecordRef rec)
+@cname("LLVMDbgVariableRecordGetVariable");
+
+extern fn LLVMMetadataRef dbg_variable_record_get_expression(
+  LLVMDbgRecordRef rec)
+@cname("LLVMDbgVariableRecordGetExpression");
+
+extern fn CUInt get_num_arg_operands(
+  LLVMValueRef instr)
+@cname("LLVMGetNumArgOperands");
+
+extern fn void set_instruction_call_conv(
+  LLVMValueRef instr,
+  CUInt cc)
+@cname("LLVMSetInstructionCallConv");
+
+extern fn CUInt get_instruction_call_conv(
+  LLVMValueRef instr)
+@cname("LLVMGetInstructionCallConv");
+
+extern fn void set_instr_param_alignment(
+  LLVMValueRef instr,
+  LLVMAttributeIndex idx,
+  CUInt align)
+@cname("LLVMSetInstrParamAlignment");
+
+extern fn void add_call_site_attribute(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx,
+  LLVMAttributeRef a)
+@cname("LLVMAddCallSiteAttribute");
+
+extern fn CUInt get_call_site_attribute_count(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx)
+@cname("LLVMGetCallSiteAttributeCount");
+
+extern fn void get_call_site_attributes(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx,
+  LLVMAttributeRef* attrs)
+@cname("LLVMGetCallSiteAttributes");
+
+extern fn LLVMAttributeRef get_call_site_enum_attribute(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx,
+  CUInt kind_id)
+@cname("LLVMGetCallSiteEnumAttribute");
+
+extern fn LLVMAttributeRef get_call_site_string_attribute(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx,
+  CChar* k,
+  CUInt k_len)
+@cname("LLVMGetCallSiteStringAttribute");
+
+extern fn void remove_call_site_enum_attribute(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx,
+  CUInt kind_id)
+@cname("LLVMRemoveCallSiteEnumAttribute");
+
+extern fn void remove_call_site_string_attribute(
+  LLVMValueRef c,
+  LLVMAttributeIndex idx,
+  CChar* k,
+  CUInt k_len)
+@cname("LLVMRemoveCallSiteStringAttribute");
+
+extern fn LLVMTypeRef get_called_function_type(
+  LLVMValueRef c)
+@cname("LLVMGetCalledFunctionType");
+
+extern fn LLVMValueRef get_called_value(
+  LLVMValueRef instr)
+@cname("LLVMGetCalledValue");
+
+extern fn CUInt get_num_operand_bundles(
+  LLVMValueRef c)
+@cname("LLVMGetNumOperandBundles");
+
+extern fn LLVMOperandBundleRef get_operand_bundle_at_index(
+  LLVMValueRef c,
+  CUInt index)
+@cname("LLVMGetOperandBundleAtIndex");
+
+extern fn LLVMBool is_tail_call(
+  LLVMValueRef call_inst)
+@cname("LLVMIsTailCall");
+
+extern fn void set_tail_call(
+  LLVMValueRef call_inst,
+  LLVMBool is_tail_call)
+@cname("LLVMSetTailCall");
+
+extern fn LLVMTailCallKind get_tail_call_kind(
+  LLVMValueRef call_inst)
+@cname("LLVMGetTailCallKind");
+
+extern fn void set_tail_call_kind(
+  LLVMValueRef call_inst,
+  LLVMTailCallKind kind)
+@cname("LLVMSetTailCallKind");
+
+extern fn LLVMBasicBlockRef get_normal_dest(
+  LLVMValueRef invoke_inst)
+@cname("LLVMGetNormalDest");
+
+extern fn LLVMBasicBlockRef get_unwind_dest(
+  LLVMValueRef invoke_inst)
+@cname("LLVMGetUnwindDest");
+
+extern fn void set_normal_dest(
+  LLVMValueRef invoke_inst,
+  LLVMBasicBlockRef b)
+@cname("LLVMSetNormalDest");
+
+extern fn void set_unwind_dest(
+  LLVMValueRef invoke_inst,
+  LLVMBasicBlockRef b)
+@cname("LLVMSetUnwindDest");
+
+extern fn LLVMBasicBlockRef get_call_br_default_dest(
+  LLVMValueRef call_br)
+@cname("LLVMGetCallBrDefaultDest");
+
+extern fn CUInt get_call_br_num_indirect_dests(
+  LLVMValueRef call_br)
+@cname("LLVMGetCallBrNumIndirectDests");
+
+extern fn LLVMBasicBlockRef get_call_br_indirect_dest(
+  LLVMValueRef call_br,
+  CUInt idx)
+@cname("LLVMGetCallBrIndirectDest");
+
+extern fn CUInt get_num_successors(
+  LLVMValueRef term)
+@cname("LLVMGetNumSuccessors");
+
+extern fn LLVMBasicBlockRef get_successor(
+  LLVMValueRef term,
+  CUInt i)
+@cname("LLVMGetSuccessor");
+
+extern fn void set_successor(
+  LLVMValueRef term,
+  CUInt i,
+  LLVMBasicBlockRef block)
+@cname("LLVMSetSuccessor");
+
+extern fn LLVMBool is_conditional(
+  LLVMValueRef branch)
+@cname("LLVMIsConditional");
+
+extern fn LLVMValueRef get_condition(
+  LLVMValueRef branch)
+@cname("LLVMGetCondition");
+
+extern fn void set_condition(
+  LLVMValueRef branch,
+  LLVMValueRef cond)
+@cname("LLVMSetCondition");
+
+extern fn LLVMBasicBlockRef get_switch_default_dest(
+  LLVMValueRef switch_instr)
+@cname("LLVMGetSwitchDefaultDest");
+
+extern fn LLVMValueRef get_switch_case_value(
+  LLVMValueRef switch_instr,
+  CUInt i)
+@cname("LLVMGetSwitchCaseValue");
+
+extern fn void set_switch_case_value(
+  LLVMValueRef switch_instr,
+  CUInt i,
+  LLVMValueRef case_value)
+@cname("LLVMSetSwitchCaseValue");
+
+extern fn LLVMTypeRef get_allocated_type(
+  LLVMValueRef alloca)
+@cname("LLVMGetAllocatedType");
+
+extern fn LLVMBool is_in_bounds(
+  LLVMValueRef gep)
+@cname("LLVMIsInBounds");
+
+extern fn void set_is_in_bounds(
+  LLVMValueRef gep,
+  LLVMBool in_bounds)
+@cname("LLVMSetIsInBounds");
+
+extern fn LLVMTypeRef get_gep_source_element_type(
+  LLVMValueRef gep)
+@cname("LLVMGetGEPSourceElementType");
+
+extern fn LLVMGEPNoWrapFlags gep_get_no_wrap_flags(
+  LLVMValueRef gep)
+@cname("LLVMGEPGetNoWrapFlags");
+
+extern fn void gep_set_no_wrap_flags(
+  LLVMValueRef gep,
+  LLVMGEPNoWrapFlags no_wrap_flags)
+@cname("LLVMGEPSetNoWrapFlags");
+
+extern fn void add_incoming(
+  LLVMValueRef phi_node,
+  LLVMValueRef* incoming_values,
+  LLVMBasicBlockRef* incoming_blocks,
+  CUInt count)
+@cname("LLVMAddIncoming");
+
+extern fn CUInt count_incoming(
+  LLVMValueRef phi_node)
+@cname("LLVMCountIncoming");
+
+extern fn LLVMValueRef get_incoming_value(
+  LLVMValueRef phi_node,
+  CUInt index)
+@cname("LLVMGetIncomingValue");
+
+extern fn LLVMBasicBlockRef get_incoming_block(
+  LLVMValueRef phi_node,
+  CUInt index)
+@cname("LLVMGetIncomingBlock");
+
+extern fn CUInt get_num_indices(
+  LLVMValueRef inst)
+@cname("LLVMGetNumIndices");
+
+extern fn CUInt* get_indices(
+  LLVMValueRef inst)
+@cname("LLVMGetIndices");
+
+extern fn LLVMBuilderRef create_builder_in_context(
+  LLVMContextRef c)
+@cname("LLVMCreateBuilderInContext");
+
+extern fn LLVMBuilderRef create_builder()
+@cname("LLVMCreateBuilder");
+
+extern fn void position_builder(
+  LLVMBuilderRef builder,
+  LLVMBasicBlockRef block,
+  LLVMValueRef instr)
+@cname("LLVMPositionBuilder");
+
+extern fn void position_builder_before_dbg_records(
+  LLVMBuilderRef builder,
+  LLVMBasicBlockRef block,
+  LLVMValueRef inst)
+@cname("LLVMPositionBuilderBeforeDbgRecords");
+
+extern fn void position_builder_before(
+  LLVMBuilderRef builder,
+  LLVMValueRef instr)
+@cname("LLVMPositionBuilderBefore");
+
+extern fn void position_builder_before_instr_and_dbg_records(
+  LLVMBuilderRef builder,
+  LLVMValueRef instr)
+@cname("LLVMPositionBuilderBeforeInstrAndDbgRecords");
+
+extern fn void position_builder_at_end(
+  LLVMBuilderRef builder,
+  LLVMBasicBlockRef block)
+@cname("LLVMPositionBuilderAtEnd");
+
+extern fn LLVMBasicBlockRef get_insert_block(
+  LLVMBuilderRef builder)
+@cname("LLVMGetInsertBlock");
+
+extern fn void clear_insertion_position(
+  LLVMBuilderRef builder)
+@cname("LLVMClearInsertionPosition");
+
+extern fn void insert_into_builder(
+  LLVMBuilderRef builder,
+  LLVMValueRef instr)
+@cname("LLVMInsertIntoBuilder");
+
+extern fn void insert_into_builder_with_name(
+  LLVMBuilderRef builder,
+  LLVMValueRef instr,
+  CChar* name)
+@cname("LLVMInsertIntoBuilderWithName");
+
+extern fn void dispose_builder(
+  LLVMBuilderRef builder)
+@cname("LLVMDisposeBuilder");
+
+extern fn LLVMMetadataRef get_current_debug_location_2(
+  LLVMBuilderRef builder)
+@cname("LLVMGetCurrentDebugLocation2");
+
+extern fn void set_current_debug_location_2(
+  LLVMBuilderRef builder,
+  LLVMMetadataRef loc)
+@cname("LLVMSetCurrentDebugLocation2");
+
+extern fn void set_inst_debug_location(
+  LLVMBuilderRef builder,
+  LLVMValueRef inst)
+@cname("LLVMSetInstDebugLocation");
+
+extern fn void add_metadata_to_inst(
+  LLVMBuilderRef builder,
+  LLVMValueRef inst)
+@cname("LLVMAddMetadataToInst");
+
+extern fn LLVMMetadataRef builder_get_default_fp_math_tag(
+  LLVMBuilderRef builder)
+@cname("LLVMBuilderGetDefaultFPMathTag");
+
+extern fn void builder_set_default_fp_math_tag(
+  LLVMBuilderRef builder,
+  LLVMMetadataRef fp_math_tag)
+@cname("LLVMBuilderSetDefaultFPMathTag");
+
+extern fn LLVMContextRef get_builder_context(
+  LLVMBuilderRef builder)
+@cname("LLVMGetBuilderContext");
+
+extern fn void set_current_debug_location(
+  LLVMBuilderRef builder,
+  LLVMValueRef l)
+@cname("LLVMSetCurrentDebugLocation");
+
+extern fn LLVMValueRef get_current_debug_location(
+  LLVMBuilderRef builder)
+@cname("LLVMGetCurrentDebugLocation");
+
+extern fn LLVMValueRef build_ret_void(
+  LLVMBuilderRef)
+@cname("LLVMBuildRetVoid");
+
+extern fn LLVMValueRef build_ret(
+  LLVMBuilderRef,
+  LLVMValueRef v)
+@cname("LLVMBuildRet");
+
+extern fn LLVMValueRef build_aggregate_ret(
+  LLVMBuilderRef,
+  LLVMValueRef* ret_vals,
+  CUInt n)
+@cname("LLVMBuildAggregateRet");
+
+extern fn LLVMValueRef build_br(
+  LLVMBuilderRef,
+  LLVMBasicBlockRef dest)
+@cname("LLVMBuildBr");
+
+extern fn LLVMValueRef build_cond_br(
+  LLVMBuilderRef,
+  LLVMValueRef _if,
+  LLVMBasicBlockRef then,
+  LLVMBasicBlockRef _else)
+@cname("LLVMBuildCondBr");
+
+extern fn LLVMValueRef build_switch(
+  LLVMBuilderRef,
+  LLVMValueRef v,
+  LLVMBasicBlockRef _else,
+  CUInt num_cases)
+@cname("LLVMBuildSwitch");
+
+extern fn LLVMValueRef build_indirect_br(
+  LLVMBuilderRef b,
+  LLVMValueRef addr,
+  CUInt num_dests)
+@cname("LLVMBuildIndirectBr");
+
+extern fn LLVMValueRef build_call_br(
+  LLVMBuilderRef b,
+  LLVMTypeRef ty,
+  LLVMValueRef _fn,
+  LLVMBasicBlockRef default_dest,
+  LLVMBasicBlockRef* indirect_dests,
+  CUInt num_indirect_dests,
+  LLVMValueRef* args,
+  CUInt num_args,
+  LLVMOperandBundleRef* bundles,
+  CUInt num_bundles,
+  CChar* name)
+@cname("LLVMBuildCallBr");
+
+extern fn LLVMValueRef build_invoke_2(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  LLVMValueRef _fn,
+  LLVMValueRef* args,
+  CUInt num_args,
+  LLVMBasicBlockRef then,
+  LLVMBasicBlockRef _catch,
+  CChar* name)
+@cname("LLVMBuildInvoke2");
+
+extern fn LLVMValueRef build_invoke_with_operand_bundles(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  LLVMValueRef _fn,
+  LLVMValueRef* args,
+  CUInt num_args,
+  LLVMBasicBlockRef then,
+  LLVMBasicBlockRef _catch,
+  LLVMOperandBundleRef* bundles,
+  CUInt num_bundles,
+  CChar* name)
+@cname("LLVMBuildInvokeWithOperandBundles");
+
+extern fn LLVMValueRef build_unreachable(
+  LLVMBuilderRef)
+@cname("LLVMBuildUnreachable");
+
+extern fn LLVMValueRef build_resume(
+  LLVMBuilderRef b,
+  LLVMValueRef exn)
+@cname("LLVMBuildResume");
+
+extern fn LLVMValueRef build_landing_pad(
+  LLVMBuilderRef b,
+  LLVMTypeRef ty,
+  LLVMValueRef pers_fn,
+  CUInt num_clauses,
+  CChar* name)
+@cname("LLVMBuildLandingPad");
+
+extern fn LLVMValueRef build_cleanup_ret(
+  LLVMBuilderRef b,
+  LLVMValueRef catch_pad,
+  LLVMBasicBlockRef bb)
+@cname("LLVMBuildCleanupRet");
+
+extern fn LLVMValueRef build_catch_ret(
+  LLVMBuilderRef b,
+  LLVMValueRef catch_pad,
+  LLVMBasicBlockRef bb)
+@cname("LLVMBuildCatchRet");
+
+extern fn LLVMValueRef build_catch_pad(
+  LLVMBuilderRef b,
+  LLVMValueRef parent_pad,
+  LLVMValueRef* args,
+  CUInt num_args,
+  CChar* name)
+@cname("LLVMBuildCatchPad");
+
+extern fn LLVMValueRef build_cleanup_pad(
+  LLVMBuilderRef b,
+  LLVMValueRef parent_pad,
+  LLVMValueRef* args,
+  CUInt num_args,
+  CChar* name)
+@cname("LLVMBuildCleanupPad");
+
+extern fn LLVMValueRef build_catch_switch(
+  LLVMBuilderRef b,
+  LLVMValueRef parent_pad,
+  LLVMBasicBlockRef unwind_bb,
+  CUInt num_handlers,
+  CChar* name)
+@cname("LLVMBuildCatchSwitch");
+
+extern fn void add_case(
+  LLVMValueRef _switch,
+  LLVMValueRef on_val,
+  LLVMBasicBlockRef dest)
+@cname("LLVMAddCase");
+
+extern fn void add_destination(
+  LLVMValueRef indirect_br,
+  LLVMBasicBlockRef dest)
+@cname("LLVMAddDestination");
+
+extern fn CUInt get_num_clauses(
+  LLVMValueRef landing_pad)
+@cname("LLVMGetNumClauses");
+
+extern fn LLVMValueRef get_clause(
+  LLVMValueRef landing_pad,
+  CUInt idx)
+@cname("LLVMGetClause");
+
+extern fn void add_clause(
+  LLVMValueRef landing_pad,
+  LLVMValueRef clause_val)
+@cname("LLVMAddClause");
+
+extern fn LLVMBool is_cleanup(
+  LLVMValueRef landing_pad)
+@cname("LLVMIsCleanup");
+
+extern fn void set_cleanup(
+  LLVMValueRef landing_pad,
+  LLVMBool val)
+@cname("LLVMSetCleanup");
+
+extern fn void add_handler(
+  LLVMValueRef catch_switch,
+  LLVMBasicBlockRef dest)
+@cname("LLVMAddHandler");
+
+extern fn CUInt get_num_handlers(
+  LLVMValueRef catch_switch)
+@cname("LLVMGetNumHandlers");
+
+extern fn void get_handlers(
+  LLVMValueRef catch_switch,
+  LLVMBasicBlockRef* handlers)
+@cname("LLVMGetHandlers");
+
+extern fn LLVMValueRef get_arg_operand(
+  LLVMValueRef funclet,
+  CUInt i)
+@cname("LLVMGetArgOperand");
+
+extern fn void set_arg_operand(
+  LLVMValueRef funclet,
+  CUInt i,
+  LLVMValueRef value)
+@cname("LLVMSetArgOperand");
+
+extern fn LLVMValueRef get_parent_catch_switch(
+  LLVMValueRef catch_pad)
+@cname("LLVMGetParentCatchSwitch");
+
+extern fn void set_parent_catch_switch(
+  LLVMValueRef catch_pad,
+  LLVMValueRef catch_switch)
+@cname("LLVMSetParentCatchSwitch");
+
+extern fn LLVMValueRef build_add(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildAdd");
+
+extern fn LLVMValueRef build_nsw_add(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildNSWAdd");
+
+extern fn LLVMValueRef build_nuw_add(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildNUWAdd");
+
+extern fn LLVMValueRef build_f_add(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildFAdd");
+
+extern fn LLVMValueRef build_sub(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildSub");
+
+extern fn LLVMValueRef build_nsw_sub(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildNSWSub");
+
+extern fn LLVMValueRef build_nuw_sub(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildNUWSub");
+
+extern fn LLVMValueRef build_f_sub(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildFSub");
+
+extern fn LLVMValueRef build_mul(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildMul");
+
+extern fn LLVMValueRef build_nsw_mul(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildNSWMul");
+
+extern fn LLVMValueRef build_nuw_mul(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildNUWMul");
+
+extern fn LLVMValueRef build_f_mul(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildFMul");
+
+extern fn LLVMValueRef build_u_div(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildUDiv");
+
+extern fn LLVMValueRef build_exact_u_div(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildExactUDiv");
+
+extern fn LLVMValueRef build_s_div(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildSDiv");
+
+extern fn LLVMValueRef build_exact_s_div(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildExactSDiv");
+
+extern fn LLVMValueRef build_f_div(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildFDiv");
+
+extern fn LLVMValueRef build_u_rem(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildURem");
+
+extern fn LLVMValueRef build_s_rem(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildSRem");
+
+extern fn LLVMValueRef build_f_rem(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildFRem");
+
+extern fn LLVMValueRef build_shl(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildShl");
+
+extern fn LLVMValueRef build_l_shr(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildLShr");
+
+extern fn LLVMValueRef build_a_shr(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildAShr");
+
+extern fn LLVMValueRef build_and(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildAnd");
+
+extern fn LLVMValueRef build_or(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildOr");
+
+extern fn LLVMValueRef build_xor(
+  LLVMBuilderRef,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildXor");
+
+extern fn LLVMValueRef build_bin_op(
+  LLVMBuilderRef b,
+  LLVMOpcode op,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildBinOp");
+
+extern fn LLVMValueRef build_neg(
+  LLVMBuilderRef,
+  LLVMValueRef v,
+  CChar* name)
+@cname("LLVMBuildNeg");
+
+extern fn LLVMValueRef build_nsw_neg(
+  LLVMBuilderRef b,
+  LLVMValueRef v,
+  CChar* name)
+@cname("LLVMBuildNSWNeg");
+
+extern fn LLVMValueRef build_nuw_neg(
+  LLVMBuilderRef b,
+  LLVMValueRef v,
+  CChar* name)
+@cname("LLVMBuildNUWNeg");
+
+extern fn LLVMValueRef build_f_neg(
+  LLVMBuilderRef,
+  LLVMValueRef v,
+  CChar* name)
+@cname("LLVMBuildFNeg");
+
+extern fn LLVMValueRef build_not(
+  LLVMBuilderRef,
+  LLVMValueRef v,
+  CChar* name)
+@cname("LLVMBuildNot");
+
+extern fn LLVMBool get_nuw(
+  LLVMValueRef arith_inst)
+@cname("LLVMGetNUW");
+
+extern fn void set_nuw(
+  LLVMValueRef arith_inst,
+  LLVMBool has_nuw)
+@cname("LLVMSetNUW");
+
+extern fn LLVMBool get_nsw(
+  LLVMValueRef arith_inst)
+@cname("LLVMGetNSW");
+
+extern fn void set_nsw(
+  LLVMValueRef arith_inst,
+  LLVMBool has_nsw)
+@cname("LLVMSetNSW");
+
+extern fn LLVMBool get_exact(
+  LLVMValueRef div_or_shr_inst)
+@cname("LLVMGetExact");
+
+extern fn void set_exact(
+  LLVMValueRef div_or_shr_inst,
+  LLVMBool is_exact)
+@cname("LLVMSetExact");
+
+extern fn LLVMBool get_n_neg(
+  LLVMValueRef non_neg_inst)
+@cname("LLVMGetNNeg");
+
+extern fn void set_n_neg(
+  LLVMValueRef non_neg_inst,
+  LLVMBool is_non_neg)
+@cname("LLVMSetNNeg");
+
+extern fn LLVMFastMathFlags get_fast_math_flags(
+  LLVMValueRef fp_math_inst)
+@cname("LLVMGetFastMathFlags");
+
+extern fn void set_fast_math_flags(
+  LLVMValueRef fp_math_inst,
+  LLVMFastMathFlags fmf)
+@cname("LLVMSetFastMathFlags");
+
+extern fn LLVMBool can_value_use_fast_math_flags(
+  LLVMValueRef inst)
+@cname("LLVMCanValueUseFastMathFlags");
+
+extern fn LLVMBool get_is_disjoint(
+  LLVMValueRef inst)
+@cname("LLVMGetIsDisjoint");
+
+extern fn void set_is_disjoint(
+  LLVMValueRef inst,
+  LLVMBool is_disjoint)
+@cname("LLVMSetIsDisjoint");
+
+extern fn LLVMValueRef build_malloc(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  CChar* name)
+@cname("LLVMBuildMalloc");
+
+extern fn LLVMValueRef build_array_malloc(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  LLVMValueRef val,
+  CChar* name)
+@cname("LLVMBuildArrayMalloc");
+
+extern fn LLVMValueRef build_mem_set(
+  LLVMBuilderRef b,
+  LLVMValueRef ptr,
+  LLVMValueRef val,
+  LLVMValueRef len,
+  CUInt align)
+@cname("LLVMBuildMemSet");
+
+extern fn LLVMValueRef build_mem_cpy(
+  LLVMBuilderRef b,
+  LLVMValueRef dst,
+  CUInt dst_align,
+  LLVMValueRef src,
+  CUInt src_align,
+  LLVMValueRef size)
+@cname("LLVMBuildMemCpy");
+
+extern fn LLVMValueRef build_mem_move(
+  LLVMBuilderRef b,
+  LLVMValueRef dst,
+  CUInt dst_align,
+  LLVMValueRef src,
+  CUInt src_align,
+  LLVMValueRef size)
+@cname("LLVMBuildMemMove");
+
+extern fn LLVMValueRef build_alloca(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  CChar* name)
+@cname("LLVMBuildAlloca");
+
+extern fn LLVMValueRef build_array_alloca(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  LLVMValueRef val,
+  CChar* name)
+@cname("LLVMBuildArrayAlloca");
+
+extern fn LLVMValueRef build_free(
+  LLVMBuilderRef,
+  LLVMValueRef pointer_val)
+@cname("LLVMBuildFree");
+
+extern fn LLVMValueRef build_load_2(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  LLVMValueRef pointer_val,
+  CChar* name)
+@cname("LLVMBuildLoad2");
+
+extern fn LLVMValueRef build_store(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMValueRef ptr)
+@cname("LLVMBuildStore");
+
+extern fn LLVMValueRef build_gep2(
+  LLVMBuilderRef b,
+  LLVMTypeRef ty,
+  LLVMValueRef pointer,
+  LLVMValueRef* indices,
+  CUInt num_indices,
+  CChar* name)
+@cname("LLVMBuildGEP2");
+
+extern fn LLVMValueRef build_in_bounds_gep2(
+  LLVMBuilderRef b,
+  LLVMTypeRef ty,
+  LLVMValueRef pointer,
+  LLVMValueRef* indices,
+  CUInt num_indices,
+  CChar* name)
+@cname("LLVMBuildInBoundsGEP2");
+
+extern fn LLVMValueRef build_gep_with_no_wrap_flags(
+  LLVMBuilderRef b,
+  LLVMTypeRef ty,
+  LLVMValueRef pointer,
+  LLVMValueRef* indices,
+  CUInt num_indices,
+  CChar* name,
+  LLVMGEPNoWrapFlags no_wrap_flags)
+@cname("LLVMBuildGEPWithNoWrapFlags");
+
+extern fn LLVMValueRef build_struct_gep2(
+  LLVMBuilderRef b,
+  LLVMTypeRef ty,
+  LLVMValueRef pointer,
+  CUInt idx,
+  CChar* name)
+@cname("LLVMBuildStructGEP2");
+
+extern fn LLVMValueRef build_global_string(
+  LLVMBuilderRef b,
+  CChar* str,
+  CChar* name)
+@cname("LLVMBuildGlobalString");
+
+extern fn LLVMValueRef build_global_string_ptr(
+  LLVMBuilderRef b,
+  CChar* str,
+  CChar* name)
+@cname("LLVMBuildGlobalStringPtr");
+
+extern fn LLVMBool get_volatile(
+  LLVMValueRef inst)
+@cname("LLVMGetVolatile");
+
+extern fn void set_volatile(
+  LLVMValueRef memory_access_inst,
+  LLVMBool is_volatile)
+@cname("LLVMSetVolatile");
+
+extern fn LLVMBool get_weak(
+  LLVMValueRef cmp_xchg_inst)
+@cname("LLVMGetWeak");
+
+extern fn void set_weak(
+  LLVMValueRef cmp_xchg_inst,
+  LLVMBool is_weak)
+@cname("LLVMSetWeak");
+
+extern fn LLVMAtomicOrdering get_ordering(
+  LLVMValueRef memory_access_inst)
+@cname("LLVMGetOrdering");
+
+extern fn void set_ordering(
+  LLVMValueRef memory_access_inst,
+  LLVMAtomicOrdering ordering)
+@cname("LLVMSetOrdering");
+
+extern fn LLVMAtomicRMWBinOp get_atomic_rmw_bin_op(
+  LLVMValueRef atomic_rmw_inst)
+@cname("LLVMGetAtomicRMWBinOp");
+
+extern fn void set_atomic_rmw_bin_op(
+  LLVMValueRef atomic_rmw_inst,
+  LLVMAtomicRMWBinOp bin_op)
+@cname("LLVMSetAtomicRMWBinOp");
+
+extern fn LLVMValueRef build_trunc(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildTrunc");
+
+extern fn LLVMValueRef build_z_ext(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildZExt");
+
+extern fn LLVMValueRef build_s_ext(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildSExt");
+
+extern fn LLVMValueRef build_fp_to_ui(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildFPToUI");
+
+extern fn LLVMValueRef build_fp_to_si(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildFPToSI");
+
+extern fn LLVMValueRef build_ui_to_fp(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildUIToFP");
+
+extern fn LLVMValueRef build_si_to_fp(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildSIToFP");
+
+extern fn LLVMValueRef build_fp_trunc(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildFPTrunc");
+
+extern fn LLVMValueRef build_fp_ext(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildFPExt");
+
+extern fn LLVMValueRef build_ptr_to_int(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildPtrToInt");
+
+extern fn LLVMValueRef build_int_to_ptr(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildIntToPtr");
+
+extern fn LLVMValueRef build_bit_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildBitCast");
+
+extern fn LLVMValueRef build_addr_space_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildAddrSpaceCast");
+
+extern fn LLVMValueRef build_z_ext_or_bit_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildZExtOrBitCast");
+
+extern fn LLVMValueRef build_s_ext_or_bit_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildSExtOrBitCast");
+
+extern fn LLVMValueRef build_trunc_or_bit_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildTruncOrBitCast");
+
+extern fn LLVMValueRef build_cast(
+  LLVMBuilderRef b,
+  LLVMOpcode op,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildCast");
+
+extern fn LLVMValueRef build_pointer_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildPointerCast");
+
+extern fn LLVMValueRef build_int_cast_2(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  LLVMBool is_signed,
+  CChar* name)
+@cname("LLVMBuildIntCast2");
+
+extern fn LLVMValueRef build_fp_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildFPCast");
+
+extern fn LLVMValueRef build_int_cast(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  LLVMTypeRef dest_ty,
+  CChar* name)
+@cname("LLVMBuildIntCast");
+
+extern fn LLVMOpcode get_cast_opcode(
+  LLVMValueRef src,
+  LLVMBool src_is_signed,
+  LLVMTypeRef dest_ty,
+  LLVMBool dest_is_signed)
+@cname("LLVMGetCastOpcode");
+
+extern fn LLVMValueRef build_i_cmp(
+  LLVMBuilderRef,
+  LLVMIntPredicate op,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildICmp");
+
+extern fn LLVMValueRef build_f_cmp(
+  LLVMBuilderRef,
+  LLVMRealPredicate op,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildFCmp");
+
+extern fn LLVMValueRef build_phi(
+  LLVMBuilderRef,
+  LLVMTypeRef ty,
+  CChar* name)
+@cname("LLVMBuildPhi");
+
+extern fn LLVMValueRef build_call_2(
+  LLVMBuilderRef,
+  LLVMTypeRef,
+  LLVMValueRef _fn,
+  LLVMValueRef* args,
+  CUInt num_args,
+  CChar* name)
+@cname("LLVMBuildCall2");
+
+extern fn LLVMValueRef build_call_with_operand_bundles(
+  LLVMBuilderRef,
+  LLVMTypeRef,
+  LLVMValueRef _fn,
+  LLVMValueRef* args,
+  CUInt num_args,
+  LLVMOperandBundleRef* bundles,
+  CUInt num_bundles,
+  CChar* name)
+@cname("LLVMBuildCallWithOperandBundles");
+
+extern fn LLVMValueRef build_select(
+  LLVMBuilderRef,
+  LLVMValueRef _if,
+  LLVMValueRef then,
+  LLVMValueRef _else,
+  CChar* name)
+@cname("LLVMBuildSelect");
+
+extern fn LLVMValueRef build_va_arg(
+  LLVMBuilderRef,
+  LLVMValueRef list,
+  LLVMTypeRef ty,
+  CChar* name)
+@cname("LLVMBuildVAArg");
+
+extern fn LLVMValueRef build_extract_element(
+  LLVMBuilderRef,
+  LLVMValueRef vec_val,
+  LLVMValueRef index,
+  CChar* name)
+@cname("LLVMBuildExtractElement");
+
+extern fn LLVMValueRef build_insert_element(
+  LLVMBuilderRef,
+  LLVMValueRef vec_val,
+  LLVMValueRef elt_val,
+  LLVMValueRef index,
+  CChar* name)
+@cname("LLVMBuildInsertElement");
+
+extern fn LLVMValueRef build_shuffle_vector(
+  LLVMBuilderRef,
+  LLVMValueRef v1,
+  LLVMValueRef v2,
+  LLVMValueRef mask,
+  CChar* name)
+@cname("LLVMBuildShuffleVector");
+
+extern fn LLVMValueRef build_extract_value(
+  LLVMBuilderRef,
+  LLVMValueRef agg_val,
+  CUInt index,
+  CChar* name)
+@cname("LLVMBuildExtractValue");
+
+extern fn LLVMValueRef build_insert_value(
+  LLVMBuilderRef,
+  LLVMValueRef agg_val,
+  LLVMValueRef elt_val,
+  CUInt index,
+  CChar* name)
+@cname("LLVMBuildInsertValue");
+
+extern fn LLVMValueRef build_freeze(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  CChar* name)
+@cname("LLVMBuildFreeze");
+
+extern fn LLVMValueRef build_is_null(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  CChar* name)
+@cname("LLVMBuildIsNull");
+
+extern fn LLVMValueRef build_is_not_null(
+  LLVMBuilderRef,
+  LLVMValueRef val,
+  CChar* name)
+@cname("LLVMBuildIsNotNull");
+
+extern fn LLVMValueRef build_ptr_diff_2(
+  LLVMBuilderRef,
+  LLVMTypeRef elem_ty,
+  LLVMValueRef lhs,
+  LLVMValueRef rhs,
+  CChar* name)
+@cname("LLVMBuildPtrDiff2");
+
+extern fn LLVMValueRef build_fence(
+  LLVMBuilderRef b,
+  LLVMAtomicOrdering ordering,
+  LLVMBool single_thread,
+  CChar* name)
+@cname("LLVMBuildFence");
+
+extern fn LLVMValueRef build_fence_sync_scope(
+  LLVMBuilderRef b,
+  LLVMAtomicOrdering ordering,
+  CUInt ssid,
+  CChar* name)
+@cname("LLVMBuildFenceSyncScope");
+
+extern fn LLVMValueRef build_atomic_rmw(
+  LLVMBuilderRef b,
+  LLVMAtomicRMWBinOp op,
+  LLVMValueRef ptr,
+  LLVMValueRef val,
+  LLVMAtomicOrdering ordering,
+  LLVMBool single_thread)
+@cname("LLVMBuildAtomicRMW");
+
+extern fn LLVMValueRef build_atomic_rmw_sync_scope(
+  LLVMBuilderRef b,
+  LLVMAtomicRMWBinOp op,
+  LLVMValueRef ptr,
+  LLVMValueRef val,
+  LLVMAtomicOrdering ordering,
+  CUInt ssid)
+@cname("LLVMBuildAtomicRMWSyncScope");
+
+extern fn LLVMValueRef build_atomic_cmp_xchg(
+  LLVMBuilderRef b,
+  LLVMValueRef ptr,
+  LLVMValueRef cmp,
+  LLVMValueRef new,
+  LLVMAtomicOrdering success_ordering,
+  LLVMAtomicOrdering failure_ordering,
+  LLVMBool single_thread)
+@cname("LLVMBuildAtomicCmpXchg");
+
+extern fn LLVMValueRef build_atomic_cmp_xchg_sync_scope(
+  LLVMBuilderRef b,
+  LLVMValueRef ptr,
+  LLVMValueRef cmp,
+  LLVMValueRef new,
+  LLVMAtomicOrdering success_ordering,
+  LLVMAtomicOrdering failure_ordering,
+  CUInt ssid)
+@cname("LLVMBuildAtomicCmpXchgSyncScope");
+
+extern fn CUInt get_num_mask_elements(
+  LLVMValueRef shuffle_vector_inst)
+@cname("LLVMGetNumMaskElements");
+
+extern fn CInt get_undef_mask_elem()
+@cname("LLVMGetUndefMaskElem");
+
+extern fn CInt get_mask_value(
+  LLVMValueRef shuffle_vector_inst,
+  CUInt elt)
+@cname("LLVMGetMaskValue");
+
+extern fn LLVMBool is_atomic_single_thread(
+  LLVMValueRef atomic_inst)
+@cname("LLVMIsAtomicSingleThread");
+
+extern fn void set_atomic_single_thread(
+  LLVMValueRef atomic_inst,
+  LLVMBool single_thread)
+@cname("LLVMSetAtomicSingleThread");
+
+extern fn LLVMBool is_atomic(
+  LLVMValueRef inst)
+@cname("LLVMIsAtomic");
+
+extern fn CUInt get_atomic_sync_scope_id(
+  LLVMValueRef atomic_inst)
+@cname("LLVMGetAtomicSyncScopeID");
+
+extern fn void set_atomic_sync_scope_id(
+  LLVMValueRef atomic_inst,
+  CUInt ssid)
+@cname("LLVMSetAtomicSyncScopeID");
+
+extern fn LLVMAtomicOrdering get_cmp_xchg_success_ordering(
+  LLVMValueRef cmp_xchg_inst)
+@cname("LLVMGetCmpXchgSuccessOrdering");
+
+extern fn void set_cmp_xchg_success_ordering(
+  LLVMValueRef cmp_xchg_inst,
+  LLVMAtomicOrdering ordering)
+@cname("LLVMSetCmpXchgSuccessOrdering");
+
+extern fn LLVMAtomicOrdering get_cmp_xchg_failure_ordering(
+  LLVMValueRef cmp_xchg_inst)
+@cname("LLVMGetCmpXchgFailureOrdering");
+
+extern fn void set_cmp_xchg_failure_ordering(
+  LLVMValueRef cmp_xchg_inst,
+  LLVMAtomicOrdering ordering)
+@cname("LLVMSetCmpXchgFailureOrdering");
+
+extern fn LLVMModuleProviderRef create_module_provider_for_existing_module(
+  LLVMModuleRef m)
+@cname("LLVMCreateModuleProviderForExistingModule");
+
+extern fn void dispose_module_provider(
+  LLVMModuleProviderRef m)
+@cname("LLVMDisposeModuleProvider");
+
+extern fn LLVMBool create_memory_buffer_with_contents_of_file(
+  CChar* path,
+  LLVMMemoryBufferRef* out_mem_buf,
+  CChar** out_message)
+@cname("LLVMCreateMemoryBufferWithContentsOfFile");
+
+extern fn LLVMBool create_memory_buffer_with_stdin(
+  LLVMMemoryBufferRef* out_mem_buf,
+  CChar** out_message)
+@cname("LLVMCreateMemoryBufferWithSTDIN");
+
+extern fn LLVMMemoryBufferRef create_memory_buffer_with_memory_range(
+  CChar* input_data,
+  sz input_data_length,
+  CChar* buffer_name,
+  LLVMBool requires_null_terminator)
+@cname("LLVMCreateMemoryBufferWithMemoryRange");
+
+extern fn LLVMMemoryBufferRef create_memory_buffer_with_memory_range_copy(
+  CChar* input_data,
+  sz input_data_length,
+  CChar* buffer_name)
+@cname("LLVMCreateMemoryBufferWithMemoryRangeCopy");
+
+extern fn CChar* get_buffer_start(
+  LLVMMemoryBufferRef mem_buf)
+@cname("LLVMGetBufferStart");
+
+extern fn sz get_buffer_size(
+  LLVMMemoryBufferRef mem_buf)
+@cname("LLVMGetBufferSize");
+
+extern fn void dispose_memory_buffer(
+  LLVMMemoryBufferRef mem_buf)
+@cname("LLVMDisposeMemoryBuffer");
+
+extern fn LLVMPassManagerRef create_pass_manager()
+@cname("LLVMCreatePassManager");
+
+extern fn LLVMPassManagerRef create_function_pass_manager_for_module(
+  LLVMModuleRef m)
+@cname("LLVMCreateFunctionPassManagerForModule");
+
+extern fn LLVMPassManagerRef create_function_pass_manager(
+  LLVMModuleProviderRef mp)
+@cname("LLVMCreateFunctionPassManager");
+
+extern fn LLVMBool run_pass_manager(
+  LLVMPassManagerRef pm,
+  LLVMModuleRef m)
+@cname("LLVMRunPassManager");
+
+extern fn LLVMBool initialize_function_pass_manager(
+  LLVMPassManagerRef fpm)
+@cname("LLVMInitializeFunctionPassManager");
+
+extern fn LLVMBool run_function_pass_manager(
+  LLVMPassManagerRef fpm,
+  LLVMValueRef f)
+@cname("LLVMRunFunctionPassManager");
+
+extern fn LLVMBool finalize_function_pass_manager(
+  LLVMPassManagerRef fpm)
+@cname("LLVMFinalizeFunctionPassManager");
+
+extern fn void dispose_pass_manager(
+  LLVMPassManagerRef pm)
+@cname("LLVMDisposePassManager");
+
+extern fn LLVMBool start_multithreaded()
+@cname("LLVMStartMultithreaded");
+
+extern fn void stop_multithreaded()
+@cname("LLVMStopMultithreaded");
+
+extern fn LLVMBool is_multithreaded()
+@cname("LLVMIsMultithreaded");
+
+constdef LLVMDIFlags : CUInt {
+  DI_FLAG_ZERO = 0,
+  DI_FLAG_PRIVATE = 1,
+  DI_FLAG_PROTECTED = 2,
+  DI_FLAG_PUBLIC = 3,
+  DI_FLAG_FWD_DECL = 4,
+  DI_FLAG_APPLE_BLOCK = 8,
+  DI_FLAG_RESERVED_BIT_4 = 16,
+  DI_FLAG_VIRTUAL = 32,
+  DI_FLAG_ARTIFICIAL = 64,
+  DI_FLAG_EXPLICIT = 128,
+  DI_FLAG_PROTOTYPED = 256,
+  DI_FLAG_OBJC_CLASS_COMPLETE = 512,
+  DI_FLAG_OBJECT_POINTER = 1024,
+  DI_FLAG_VECTOR = 2048,
+  DI_FLAG_STATIC_MEMBER = 4096,
+  DI_FLAG_L_VALUE_REFERENCE = 8192,
+  DI_FLAG_R_VALUE_REFERENCE = 16384,
+  DI_FLAG_RESERVED = 32768,
+  DI_FLAG_SINGLE_INHERITANCE = 65536,
+  DI_FLAG_MULTIPLE_INHERITANCE = 131072,
+  DI_FLAG_VIRTUAL_INHERITANCE = 196608,
+  DI_FLAG_INTRODUCED_VIRTUAL = 262144,
+  DI_FLAG_BIT_FIELD = 524288,
+  DI_FLAG_NO_RETURN = 1048576,
+  DI_FLAG_TYPE_PASS_BY_VALUE = 4194304,
+  DI_FLAG_TYPE_PASS_BY_REFERENCE = 8388608,
+  DI_FLAG_ENUM_CLASS = 16777216,
+  DI_FLAG_FIXED_ENUM = 16777216,
+  DI_FLAG_THUNK = 33554432,
+  DI_FLAG_NON_TRIVIAL = 67108864,
+  DI_FLAG_BIG_ENDIAN = 134217728,
+  DI_FLAG_LITTLE_ENDIAN = 268435456,
+  DI_FLAG_INDIRECT_VIRTUAL_BASE = 36,
+  DI_FLAG_ACCESSIBILITY = 3,
+  DI_FLAG_PTR_TO_MEMBER_REP = 196608
+}
+
+constdef LLVMDWARFSourceLanguage : CUInt {
+  DWARF_SOURCE_LANGUAGE_C89 = 0,
+  DWARF_SOURCE_LANGUAGE_C = 1,
+  DWARF_SOURCE_LANGUAGE_ADA_83 = 2,
+  DWARF_SOURCE_LANGUAGE_C_PLUS_PLUS = 3,
+  DWARF_SOURCE_LANGUAGE_COBOL_74 = 4,
+  DWARF_SOURCE_LANGUAGE_COBOL_85 = 5,
+  DWARF_SOURCE_LANGUAGE_FORTRAN_77 = 6,
+  DWARF_SOURCE_LANGUAGE_FORTRAN_90 = 7,
+  DWARF_SOURCE_LANGUAGE_PASCAL_83 = 8,
+  DWARF_SOURCE_LANGUAGE_MODULA_2 = 9,
+  DWARF_SOURCE_LANGUAGE_JAVA = 10,
+  DWARF_SOURCE_LANGUAGE_C99 = 11,
+  DWARF_SOURCE_LANGUAGE_ADA_95 = 12,
+  DWARF_SOURCE_LANGUAGE_FORTRAN_95 = 13,
+  DWARF_SOURCE_LANGUAGE_PLI = 14,
+  DWARF_SOURCE_LANGUAGE_OBJ_C = 15,
+  DWARF_SOURCE_LANGUAGE_OBJ_C_PLUS_PLUS = 16,
+  DWARF_SOURCE_LANGUAGE_UPC = 17,
+  DWARF_SOURCE_LANGUAGE_D = 18,
+  DWARF_SOURCE_LANGUAGE_PYTHON = 19,
+  DWARF_SOURCE_LANGUAGE_OPEN_CL = 20,
+  DWARF_SOURCE_LANGUAGE_GO = 21,
+  DWARF_SOURCE_LANGUAGE_MODULA_3 = 22,
+  DWARF_SOURCE_LANGUAGE_HASKELL = 23,
+  DWARF_SOURCE_LANGUAGE_C_PLUS_PLUS_03 = 24,
+  DWARF_SOURCE_LANGUAGE_C_PLUS_PLUS_11 = 25,
+  DWARF_SOURCE_LANGUAGE_O_CAML = 26,
+  DWARF_SOURCE_LANGUAGE_RUST = 27,
+  DWARF_SOURCE_LANGUAGE_C11 = 28,
+  DWARF_SOURCE_LANGUAGE_SWIFT = 29,
+  DWARF_SOURCE_LANGUAGE_JULIA = 30,
+  DWARF_SOURCE_LANGUAGE_DYLAN = 31,
+  DWARF_SOURCE_LANGUAGE_C_PLUS_PLUS_14 = 32,
+  DWARF_SOURCE_LANGUAGE_FORTRAN_03 = 33,
+  DWARF_SOURCE_LANGUAGE_FORTRAN_08 = 34,
+  DWARF_SOURCE_LANGUAGE_RENDER_SCRIPT = 35,
+  DWARF_SOURCE_LANGUAGE_BLISS = 36,
+  DWARF_SOURCE_LANGUAGE_KOTLIN = 37,
+  DWARF_SOURCE_LANGUAGE_ZIG = 38,
+  DWARF_SOURCE_LANGUAGE_CRYSTAL = 39,
+  DWARF_SOURCE_LANGUAGE_C_PLUS_PLUS_17 = 40,
+  DWARF_SOURCE_LANGUAGE_C_PLUS_PLUS_20 = 41,
+  DWARF_SOURCE_LANGUAGE_C17 = 42,
+  DWARF_SOURCE_LANGUAGE_FORTRAN_18 = 43,
+  DWARF_SOURCE_LANGUAGE_ADA_2005 = 44,
+  DWARF_SOURCE_LANGUAGE_ADA_2012 = 45,
+  DWARF_SOURCE_LANGUAGE_HIP = 46,
+  DWARF_SOURCE_LANGUAGE_ASSEMBLY = 47,
+  DWARF_SOURCE_LANGUAGE_C_SHARP = 48,
+  DWARF_SOURCE_LANGUAGE_MOJO = 49,
+  DWARF_SOURCE_LANGUAGE_GLSL = 50,
+  DWARF_SOURCE_LANGUAGE_GLSL_ES = 51,
+  DWARF_SOURCE_LANGUAGE_HLSL = 52,
+  DWARF_SOURCE_LANGUAGE_OPEN_CL_CPP = 53,
+  DWARF_SOURCE_LANGUAGE_CPP_FOR_OPEN_CL = 54,
+  DWARF_SOURCE_LANGUAGE_SYCL = 55,
+  DWARF_SOURCE_LANGUAGE_RUBY = 56,
+  DWARF_SOURCE_LANGUAGE_MOVE = 57,
+  DWARF_SOURCE_LANGUAGE_HYLO = 58,
+  DWARF_SOURCE_LANGUAGE_METAL = 59,
+  DWARF_SOURCE_LANGUAGE_MIPS_ASSEMBLER = 60,
+  DWARF_SOURCE_LANGUAGE_GOOGLE_RENDER_SCRIPT = 61,
+  DWARF_SOURCE_LANGUAGE_BORLAND_DELPHI = 62
+}
+
+constdef LLVMDWARFEmissionKind : CUInt {
+  DWARF_EMISSION_NONE = 0,
+  DWARF_EMISSION_FULL = 1,
+  DWARF_EMISSION_LINE_TABLES_ONLY = 2
+}
+
+alias LLVMMetadataKind = CUInt;
+
+constdef LLVMChecksumKind : CUInt {
+  CSK_MD5 = 0,
+  CSK_SHA1 = 1,
+  CSK_SHA256 = 2
+}
+
+alias LLVMDWARFTypeEncoding = CUInt;
+
+constdef LLVMDWARFMacinfoRecordType : CUInt {
+  DWARF_MACINFO_RECORD_TYPE_DEFINE = 1,
+  DWARF_MACINFO_RECORD_TYPE_MACRO = 2,
+  DWARF_MACINFO_RECORD_TYPE_START_FILE = 3,
+  DWARF_MACINFO_RECORD_TYPE_END_FILE = 4,
+  DWARF_MACINFO_RECORD_TYPE_VENDOR_EXT = 255
+}
+
+extern fn CUInt debug_metadata_version()
+@cname("LLVMDebugMetadataVersion");
+
+extern fn CUInt get_module_debug_metadata_version(
+  LLVMModuleRef _module)
+@cname("LLVMGetModuleDebugMetadataVersion");
+
+extern fn LLVMBool strip_module_debug_info(
+  LLVMModuleRef _module)
+@cname("LLVMStripModuleDebugInfo");
+
+extern fn LLVMDIBuilderRef create_di_builder_disallow_unresolved(
+  LLVMModuleRef m)
+@cname("LLVMCreateDIBuilderDisallowUnresolved");
+
+extern fn LLVMDIBuilderRef create_di_builder(
+  LLVMModuleRef m)
+@cname("LLVMCreateDIBuilder");
+
+extern fn void dispose_di_builder(
+  LLVMDIBuilderRef builder)
+@cname("LLVMDisposeDIBuilder");
+
+extern fn void di_builder_finalize(
+  LLVMDIBuilderRef builder)
+@cname("LLVMDIBuilderFinalize");
+
+extern fn void di_builder_finalize_subprogram(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef subprogram)
+@cname("LLVMDIBuilderFinalizeSubprogram");
+
+extern fn LLVMMetadataRef di_builder_create_compile_unit(
+  LLVMDIBuilderRef builder,
+  LLVMDWARFSourceLanguage lang,
+  LLVMMetadataRef file_ref,
+  CChar* producer,
+  sz producer_len,
+  LLVMBool is_optimized,
+  CChar* flags,
+  sz flags_len,
+  CUInt runtime_ver,
+  CChar* split_name,
+  sz split_name_len,
+  LLVMDWARFEmissionKind kind,
+  CUInt dwo_id,
+  LLVMBool split_debug_inlining,
+  LLVMBool debug_info_for_profiling,
+  CChar* sys_root,
+  sz sys_root_len,
+  CChar* sdk,
+  sz sdk_len)
+@cname("LLVMDIBuilderCreateCompileUnit");
+
+extern fn LLVMMetadataRef di_builder_create_file(
+  LLVMDIBuilderRef builder,
+  CChar* filename,
+  sz filename_len,
+  CChar* directory,
+  sz directory_len)
+@cname("LLVMDIBuilderCreateFile");
+
+extern fn LLVMMetadataRef di_builder_create_file_with_checksum(
+  LLVMDIBuilderRef builder,
+  CChar* filename,
+  sz filename_len,
+  CChar* directory,
+  sz directory_len,
+  LLVMChecksumKind checksum_kind,
+  CChar* checksum,
+  sz checksum_len,
+  CChar* source,
+  sz source_len)
+@cname("LLVMDIBuilderCreateFileWithChecksum");
+
+extern fn LLVMMetadataRef di_builder_create_module(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef parent_scope,
+  CChar* name,
+  sz name_len,
+  CChar* config_macros,
+  sz config_macros_len,
+  CChar* include_path,
+  sz include_path_len,
+  CChar* api_notes_file,
+  sz api_notes_file_len)
+@cname("LLVMDIBuilderCreateModule");
+
+extern fn LLVMMetadataRef di_builder_create_name_space(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef parent_scope,
+  CChar* name,
+  sz name_len,
+  LLVMBool export_symbols)
+@cname("LLVMDIBuilderCreateNameSpace");
+
+extern fn LLVMMetadataRef di_builder_create_function(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  CChar* linkage_name,
+  sz linkage_name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMMetadataRef ty,
+  LLVMBool is_local_to_unit,
+  LLVMBool is_definition,
+  CUInt scope_line,
+  LLVMDIFlags flags,
+  LLVMBool is_optimized)
+@cname("LLVMDIBuilderCreateFunction");
+
+extern fn LLVMMetadataRef di_builder_create_lexical_block(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef file,
+  CUInt line,
+  CUInt column)
+@cname("LLVMDIBuilderCreateLexicalBlock");
+
+extern fn LLVMMetadataRef di_builder_create_lexical_block_file(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef file,
+  CUInt discriminator)
+@cname("LLVMDIBuilderCreateLexicalBlockFile");
+
+extern fn LLVMMetadataRef di_builder_create_imported_module_from_namespace(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef ns,
+  LLVMMetadataRef file,
+  CUInt line)
+@cname("LLVMDIBuilderCreateImportedModuleFromNamespace");
+
+extern fn LLVMMetadataRef di_builder_create_imported_module_from_alias(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef imported_entity,
+  LLVMMetadataRef file,
+  CUInt line,
+  LLVMMetadataRef* elements,
+  CUInt num_elements)
+@cname("LLVMDIBuilderCreateImportedModuleFromAlias");
+
+extern fn LLVMMetadataRef di_builder_create_imported_module_from_module(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef m,
+  LLVMMetadataRef file,
+  CUInt line,
+  LLVMMetadataRef* elements,
+  CUInt num_elements)
+@cname("LLVMDIBuilderCreateImportedModuleFromModule");
+
+extern fn LLVMMetadataRef di_builder_create_imported_declaration(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef decl,
+  LLVMMetadataRef file,
+  CUInt line,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef* elements,
+  CUInt num_elements)
+@cname("LLVMDIBuilderCreateImportedDeclaration");
+
+extern fn LLVMMetadataRef di_builder_create_debug_location(
+  LLVMContextRef ctx,
+  CUInt line,
+  CUInt column,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef inlined_at)
+@cname("LLVMDIBuilderCreateDebugLocation");
+
+extern fn CUInt di_location_get_line(
+  LLVMMetadataRef location)
+@cname("LLVMDILocationGetLine");
+
+extern fn CUInt di_location_get_column(
+  LLVMMetadataRef location)
+@cname("LLVMDILocationGetColumn");
+
+extern fn LLVMMetadataRef di_location_get_scope(
+  LLVMMetadataRef location)
+@cname("LLVMDILocationGetScope");
+
+extern fn LLVMMetadataRef di_location_get_inlined_at(
+  LLVMMetadataRef location)
+@cname("LLVMDILocationGetInlinedAt");
+
+extern fn LLVMMetadataRef di_scope_get_file(
+  LLVMMetadataRef scope)
+@cname("LLVMDIScopeGetFile");
+
+extern fn CChar* di_file_get_directory(
+  LLVMMetadataRef file,
+  CUInt* len)
+@cname("LLVMDIFileGetDirectory");
+
+extern fn CChar* di_file_get_filename(
+  LLVMMetadataRef file,
+  CUInt* len)
+@cname("LLVMDIFileGetFilename");
+
+extern fn CChar* di_file_get_source(
+  LLVMMetadataRef file,
+  CUInt* len)
+@cname("LLVMDIFileGetSource");
+
+extern fn LLVMMetadataRef di_builder_get_or_create_type_array(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef* data,
+  sz num_elements)
+@cname("LLVMDIBuilderGetOrCreateTypeArray");
+
+extern fn LLVMMetadataRef di_builder_create_subroutine_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef file,
+  LLVMMetadataRef* parameter_types,
+  CUInt num_parameter_types,
+  LLVMDIFlags flags)
+@cname("LLVMDIBuilderCreateSubroutineType");
+
+extern fn LLVMMetadataRef di_builder_create_macro(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef parent_macro_file,
+  CUInt line,
+  LLVMDWARFMacinfoRecordType record_type,
+  CChar* name,
+  sz name_len,
+  CChar* value,
+  sz value_len)
+@cname("LLVMDIBuilderCreateMacro");
+
+extern fn LLVMMetadataRef di_builder_create_temp_macro_file(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef parent_macro_file,
+  CUInt line,
+  LLVMMetadataRef file)
+@cname("LLVMDIBuilderCreateTempMacroFile");
+
+extern fn LLVMMetadataRef di_builder_create_enumerator(
+  LLVMDIBuilderRef builder,
+  CChar* name,
+  sz name_len,
+  long value,
+  LLVMBool is_unsigned)
+@cname("LLVMDIBuilderCreateEnumerator");
+
+extern fn LLVMMetadataRef di_builder_create_enumerator_of_arbitrary_precision(
+  LLVMDIBuilderRef builder,
+  CChar* name,
+  sz name_len,
+  ulong size_in_bits,
+  ulong* words,
+  LLVMBool is_unsigned)
+@cname("LLVMDIBuilderCreateEnumeratorOfArbitraryPrecision");
+
+extern fn LLVMMetadataRef di_builder_create_enumeration_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMMetadataRef* elements,
+  CUInt num_elements,
+  LLVMMetadataRef class_ty)
+@cname("LLVMDIBuilderCreateEnumerationType");
+
+extern fn LLVMMetadataRef di_builder_create_union_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef* elements,
+  CUInt num_elements,
+  CUInt run_time_lang,
+  CChar* unique_id,
+  sz unique_id_len)
+@cname("LLVMDIBuilderCreateUnionType");
+
+extern fn LLVMMetadataRef di_builder_create_array_type(
+  LLVMDIBuilderRef builder,
+  ulong size,
+  uint align_in_bits,
+  LLVMMetadataRef ty,
+  LLVMMetadataRef* subscripts,
+  CUInt num_subscripts)
+@cname("LLVMDIBuilderCreateArrayType");
+
+extern fn LLVMMetadataRef di_builder_create_set_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMMetadataRef base_ty)
+@cname("LLVMDIBuilderCreateSetType");
+
+extern fn LLVMMetadataRef di_builder_create_subrange_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  CUInt line_no,
+  LLVMMetadataRef file,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef base_ty,
+  LLVMMetadataRef lower_bound,
+  LLVMMetadataRef upper_bound,
+  LLVMMetadataRef stride,
+  LLVMMetadataRef bias)
+@cname("LLVMDIBuilderCreateSubrangeType");
+
+extern fn LLVMMetadataRef di_builder_create_dynamic_array_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  CUInt line_no,
+  LLVMMetadataRef file,
+  ulong size,
+  uint align_in_bits,
+  LLVMMetadataRef ty,
+  LLVMMetadataRef* subscripts,
+  CUInt num_subscripts,
+  LLVMMetadataRef data_location,
+  LLVMMetadataRef associated,
+  LLVMMetadataRef allocated,
+  LLVMMetadataRef rank,
+  LLVMMetadataRef bit_stride)
+@cname("LLVMDIBuilderCreateDynamicArrayType");
+
+extern fn void replace_arrays(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef* t,
+  LLVMMetadataRef* elements,
+  CUInt num_elements)
+@cname("LLVMReplaceArrays");
+
+extern fn LLVMMetadataRef di_builder_create_vector_type(
+  LLVMDIBuilderRef builder,
+  ulong size,
+  uint align_in_bits,
+  LLVMMetadataRef ty,
+  LLVMMetadataRef* subscripts,
+  CUInt num_subscripts)
+@cname("LLVMDIBuilderCreateVectorType");
+
+extern fn LLVMMetadataRef di_builder_create_unspecified_type(
+  LLVMDIBuilderRef builder,
+  CChar* name,
+  sz name_len)
+@cname("LLVMDIBuilderCreateUnspecifiedType");
+
+extern fn LLVMMetadataRef di_builder_create_basic_type(
+  LLVMDIBuilderRef builder,
+  CChar* name,
+  sz name_len,
+  ulong size_in_bits,
+  LLVMDWARFTypeEncoding encoding,
+  LLVMDIFlags flags)
+@cname("LLVMDIBuilderCreateBasicType");
+
+extern fn LLVMMetadataRef di_builder_create_pointer_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef pointee_ty,
+  ulong size_in_bits,
+  uint align_in_bits,
+  CUInt address_space,
+  CChar* name,
+  sz name_len)
+@cname("LLVMDIBuilderCreatePointerType");
+
+extern fn LLVMMetadataRef di_builder_create_struct_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef derived_from,
+  LLVMMetadataRef* elements,
+  CUInt num_elements,
+  CUInt run_time_lang,
+  LLVMMetadataRef v_table_holder,
+  CChar* unique_id,
+  sz unique_id_len)
+@cname("LLVMDIBuilderCreateStructType");
+
+extern fn LLVMMetadataRef di_builder_create_member_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  ulong size_in_bits,
+  uint align_in_bits,
+  ulong offset_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef ty)
+@cname("LLVMDIBuilderCreateMemberType");
+
+extern fn LLVMMetadataRef di_builder_create_static_member_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  LLVMMetadataRef type,
+  LLVMDIFlags flags,
+  LLVMValueRef constant_val,
+  uint align_in_bits)
+@cname("LLVMDIBuilderCreateStaticMemberType");
+
+extern fn LLVMMetadataRef di_builder_create_member_pointer_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef pointee_type,
+  LLVMMetadataRef class_type,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMDIFlags flags)
+@cname("LLVMDIBuilderCreateMemberPointerType");
+
+extern fn LLVMMetadataRef di_builder_create_obj_ci_var(
+  LLVMDIBuilderRef builder,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  ulong size_in_bits,
+  uint align_in_bits,
+  ulong offset_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef ty,
+  LLVMMetadataRef property_node)
+@cname("LLVMDIBuilderCreateObjCIVar");
+
+extern fn LLVMMetadataRef di_builder_create_obj_c_property(
+  LLVMDIBuilderRef builder,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  CChar* getter_name,
+  sz getter_name_len,
+  CChar* setter_name,
+  sz setter_name_len,
+  CUInt property_attributes,
+  LLVMMetadataRef ty)
+@cname("LLVMDIBuilderCreateObjCProperty");
+
+extern fn LLVMMetadataRef di_builder_create_object_pointer_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef type,
+  LLVMBool implicit)
+@cname("LLVMDIBuilderCreateObjectPointerType");
+
+extern fn LLVMMetadataRef di_builder_create_qualified_type(
+  LLVMDIBuilderRef builder,
+  CUInt tag,
+  LLVMMetadataRef type)
+@cname("LLVMDIBuilderCreateQualifiedType");
+
+extern fn LLVMMetadataRef di_builder_create_reference_type(
+  LLVMDIBuilderRef builder,
+  CUInt tag,
+  LLVMMetadataRef type)
+@cname("LLVMDIBuilderCreateReferenceType");
+
+extern fn LLVMMetadataRef di_builder_create_null_ptr_type(
+  LLVMDIBuilderRef builder)
+@cname("LLVMDIBuilderCreateNullPtrType");
+
+extern fn LLVMMetadataRef di_builder_create_typedef(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef type,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMMetadataRef scope,
+  uint align_in_bits)
+@cname("LLVMDIBuilderCreateTypedef");
+
+extern fn LLVMMetadataRef di_builder_create_inheritance(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef ty,
+  LLVMMetadataRef base_ty,
+  ulong base_offset,
+  uint vb_ptr_offset,
+  LLVMDIFlags flags)
+@cname("LLVMDIBuilderCreateInheritance");
+
+extern fn LLVMMetadataRef di_builder_create_forward_decl(
+  LLVMDIBuilderRef builder,
+  CUInt tag,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef file,
+  CUInt line,
+  CUInt runtime_lang,
+  ulong size_in_bits,
+  uint align_in_bits,
+  CChar* unique_identifier,
+  sz unique_identifier_len)
+@cname("LLVMDIBuilderCreateForwardDecl");
+
+extern fn LLVMMetadataRef di_builder_create_replaceable_composite_type(
+  LLVMDIBuilderRef builder,
+  CUInt tag,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef scope,
+  LLVMMetadataRef file,
+  CUInt line,
+  CUInt runtime_lang,
+  ulong size_in_bits,
+  uint align_in_bits,
+  LLVMDIFlags flags,
+  CChar* unique_identifier,
+  sz unique_identifier_len)
+@cname("LLVMDIBuilderCreateReplaceableCompositeType");
+
+extern fn LLVMMetadataRef di_builder_create_bit_field_member_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  ulong size_in_bits,
+  ulong offset_in_bits,
+  ulong storage_offset_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef type)
+@cname("LLVMDIBuilderCreateBitFieldMemberType");
+
+extern fn LLVMMetadataRef di_builder_create_class_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_number,
+  ulong size_in_bits,
+  uint align_in_bits,
+  ulong offset_in_bits,
+  LLVMDIFlags flags,
+  LLVMMetadataRef derived_from,
+  LLVMMetadataRef* elements,
+  CUInt num_elements,
+  LLVMMetadataRef v_table_holder,
+  LLVMMetadataRef template_params_node,
+  CChar* unique_identifier,
+  sz unique_identifier_len)
+@cname("LLVMDIBuilderCreateClassType");
+
+extern fn LLVMMetadataRef di_builder_create_artificial_type(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef type)
+@cname("LLVMDIBuilderCreateArtificialType");
+
+extern fn CChar* di_type_get_name(
+  LLVMMetadataRef d_type,
+  sz* length)
+@cname("LLVMDITypeGetName");
+
+extern fn ulong di_type_get_size_in_bits(
+  LLVMMetadataRef d_type)
+@cname("LLVMDITypeGetSizeInBits");
+
+extern fn ulong di_type_get_offset_in_bits(
+  LLVMMetadataRef d_type)
+@cname("LLVMDITypeGetOffsetInBits");
+
+extern fn uint di_type_get_align_in_bits(
+  LLVMMetadataRef d_type)
+@cname("LLVMDITypeGetAlignInBits");
+
+extern fn CUInt di_type_get_line(
+  LLVMMetadataRef d_type)
+@cname("LLVMDITypeGetLine");
+
+extern fn LLVMDIFlags di_type_get_flags(
+  LLVMMetadataRef d_type)
+@cname("LLVMDITypeGetFlags");
+
+extern fn LLVMMetadataRef di_builder_get_or_create_subrange(
+  LLVMDIBuilderRef builder,
+  long lower_bound,
+  long count)
+@cname("LLVMDIBuilderGetOrCreateSubrange");
+
+extern fn LLVMMetadataRef di_builder_get_or_create_array(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef* data,
+  sz num_elements)
+@cname("LLVMDIBuilderGetOrCreateArray");
+
+extern fn LLVMMetadataRef di_builder_create_expression(
+  LLVMDIBuilderRef builder,
+  ulong* addr,
+  sz length)
+@cname("LLVMDIBuilderCreateExpression");
+
+extern fn LLVMMetadataRef di_builder_create_constant_value_expression(
+  LLVMDIBuilderRef builder,
+  ulong value)
+@cname("LLVMDIBuilderCreateConstantValueExpression");
+
+extern fn LLVMMetadataRef di_builder_create_global_variable_expression(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  CChar* linkage,
+  sz link_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMMetadataRef ty,
+  LLVMBool local_to_unit,
+  LLVMMetadataRef expr,
+  LLVMMetadataRef decl,
+  uint align_in_bits)
+@cname("LLVMDIBuilderCreateGlobalVariableExpression");
+
+extern fn ushort get_di_node_tag(
+  LLVMMetadataRef md)
+@cname("LLVMGetDINodeTag");
+
+extern fn LLVMMetadataRef di_global_variable_expression_get_variable(
+  LLVMMetadataRef gve)
+@cname("LLVMDIGlobalVariableExpressionGetVariable");
+
+extern fn LLVMMetadataRef di_global_variable_expression_get_expression(
+  LLVMMetadataRef gve)
+@cname("LLVMDIGlobalVariableExpressionGetExpression");
+
+extern fn LLVMMetadataRef di_variable_get_file(
+  LLVMMetadataRef _var)
+@cname("LLVMDIVariableGetFile");
+
+extern fn LLVMMetadataRef di_variable_get_scope(
+  LLVMMetadataRef _var)
+@cname("LLVMDIVariableGetScope");
+
+extern fn CUInt di_variable_get_line(
+  LLVMMetadataRef _var)
+@cname("LLVMDIVariableGetLine");
+
+extern fn LLVMMetadataRef temporary_md_node(
+  LLVMContextRef ctx,
+  LLVMMetadataRef* data,
+  sz num_elements)
+@cname("LLVMTemporaryMDNode");
+
+extern fn void dispose_temporary_md_node(
+  LLVMMetadataRef temp_node)
+@cname("LLVMDisposeTemporaryMDNode");
+
+extern fn void metadata_replace_all_uses_with(
+  LLVMMetadataRef temp_target_metadata,
+  LLVMMetadataRef replacement)
+@cname("LLVMMetadataReplaceAllUsesWith");
+
+extern fn LLVMMetadataRef di_builder_create_temp_global_variable_fwd_decl(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  CChar* linkage,
+  sz lnk_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMMetadataRef ty,
+  LLVMBool local_to_unit,
+  LLVMMetadataRef decl,
+  uint align_in_bits)
+@cname("LLVMDIBuilderCreateTempGlobalVariableFwdDecl");
+
+extern fn LLVMDbgRecordRef di_builder_insert_declare_record_before(
+  LLVMDIBuilderRef builder,
+  LLVMValueRef storage,
+  LLVMMetadataRef var_info,
+  LLVMMetadataRef expr,
+  LLVMMetadataRef debug_loc,
+  LLVMValueRef instr)
+@cname("LLVMDIBuilderInsertDeclareRecordBefore");
+
+extern fn LLVMDbgRecordRef di_builder_insert_declare_record_at_end(
+  LLVMDIBuilderRef builder,
+  LLVMValueRef storage,
+  LLVMMetadataRef var_info,
+  LLVMMetadataRef expr,
+  LLVMMetadataRef debug_loc,
+  LLVMBasicBlockRef block)
+@cname("LLVMDIBuilderInsertDeclareRecordAtEnd");
+
+extern fn LLVMDbgRecordRef di_builder_insert_dbg_value_record_before(
+  LLVMDIBuilderRef builder,
+  LLVMValueRef val,
+  LLVMMetadataRef var_info,
+  LLVMMetadataRef expr,
+  LLVMMetadataRef debug_loc,
+  LLVMValueRef instr)
+@cname("LLVMDIBuilderInsertDbgValueRecordBefore");
+
+extern fn LLVMDbgRecordRef di_builder_insert_dbg_value_record_at_end(
+  LLVMDIBuilderRef builder,
+  LLVMValueRef val,
+  LLVMMetadataRef var_info,
+  LLVMMetadataRef expr,
+  LLVMMetadataRef debug_loc,
+  LLVMBasicBlockRef block)
+@cname("LLVMDIBuilderInsertDbgValueRecordAtEnd");
+
+extern fn LLVMMetadataRef di_builder_create_auto_variable(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMMetadataRef ty,
+  LLVMBool always_preserve,
+  LLVMDIFlags flags,
+  uint align_in_bits)
+@cname("LLVMDIBuilderCreateAutoVariable");
+
+extern fn LLVMMetadataRef di_builder_create_parameter_variable(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef scope,
+  CChar* name,
+  sz name_len,
+  CUInt arg_no,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMMetadataRef ty,
+  LLVMBool always_preserve,
+  LLVMDIFlags flags)
+@cname("LLVMDIBuilderCreateParameterVariable");
+
+extern fn LLVMMetadataRef get_subprogram(
+  LLVMValueRef func)
+@cname("LLVMGetSubprogram");
+
+extern fn void set_subprogram(
+  LLVMValueRef func,
+  LLVMMetadataRef sp)
+@cname("LLVMSetSubprogram");
+
+extern fn CUInt di_subprogram_get_line(
+  LLVMMetadataRef subprogram)
+@cname("LLVMDISubprogramGetLine");
+
+extern fn void di_subprogram_replace_type(
+  LLVMMetadataRef subprogram,
+  LLVMMetadataRef subroutine_type)
+@cname("LLVMDISubprogramReplaceType");
+
+extern fn LLVMMetadataRef instruction_get_debug_loc(
+  LLVMValueRef inst)
+@cname("LLVMInstructionGetDebugLoc");
+
+extern fn void instruction_set_debug_loc(
+  LLVMValueRef inst,
+  LLVMMetadataRef loc)
+@cname("LLVMInstructionSetDebugLoc");
+
+extern fn LLVMMetadataRef di_builder_create_label(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef context,
+  CChar* name,
+  sz name_len,
+  LLVMMetadataRef file,
+  CUInt line_no,
+  LLVMBool always_preserve)
+@cname("LLVMDIBuilderCreateLabel");
+
+extern fn LLVMDbgRecordRef di_builder_insert_label_before(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef label_info,
+  LLVMMetadataRef location,
+  LLVMValueRef insert_before)
+@cname("LLVMDIBuilderInsertLabelBefore");
+
+extern fn LLVMDbgRecordRef di_builder_insert_label_at_end(
+  LLVMDIBuilderRef builder,
+  LLVMMetadataRef label_info,
+  LLVMMetadataRef location,
+  LLVMBasicBlockRef insert_at_end)
+@cname("LLVMDIBuilderInsertLabelAtEnd");
+
+extern fn LLVMMetadataKind get_metadata_kind(
+  LLVMMetadataRef metadata)
+@cname("LLVMGetMetadataKind");
+
+alias LLVMDisasmContextRef = void*;
+
+alias LLVMOpInfoCallback = fn CInt(
+  void* dis_info,
+  ulong pc,
+  ulong offset,
+  ulong op_size,
+  ulong inst_size,
+  CInt tag_type,
+  void* tag_buf);
+
+
+struct LLVMOpInfoSymbol1 {
+  ulong present;
+  CChar* name;
+  ulong value;
+}
+
+
+struct LLVMOpInfo1 {
+  LLVMOpInfoSymbol1 add_symbol;
+  LLVMOpInfoSymbol1 subtract_symbol;
+  ulong value;
+  ulong variant_kind;
+}
+
+alias LLVMSymbolLookupCallback = fn CChar*(
+  void* dis_info,
+  ulong reference_value,
+  ulong* reference_type,
+  ulong reference_pc,
+  CChar** reference_name);
+
+extern fn LLVMDisasmContextRef create_disasm(
+  CChar* triple_name,
+  void* dis_info,
+  CInt tag_type,
+  LLVMOpInfoCallback get_op_info,
+  LLVMSymbolLookupCallback symbol_look_up)
+@cname("LLVMCreateDisasm");
+
+extern fn LLVMDisasmContextRef create_disasm_cpu(
+  CChar* triple,
+  CChar* cpu,
+  void* dis_info,
+  CInt tag_type,
+  LLVMOpInfoCallback get_op_info,
+  LLVMSymbolLookupCallback symbol_look_up)
+@cname("LLVMCreateDisasmCPU");
+
+extern fn LLVMDisasmContextRef create_disasm_cpu_features(
+  CChar* triple,
+  CChar* cpu,
+  CChar* features,
+  void* dis_info,
+  CInt tag_type,
+  LLVMOpInfoCallback get_op_info,
+  LLVMSymbolLookupCallback symbol_look_up)
+@cname("LLVMCreateDisasmCPUFeatures");
+
+extern fn CInt set_disasm_options(
+  LLVMDisasmContextRef dc,
+  ulong options)
+@cname("LLVMSetDisasmOptions");
+
+extern fn void disasm_dispose(
+  LLVMDisasmContextRef dc)
+@cname("LLVMDisasmDispose");
+
+extern fn sz disasm_instruction(
+  LLVMDisasmContextRef dc,
+  char* bytes,
+  ulong bytes_size,
+  ulong pc,
+  CChar* out_string,
+  sz out_string_size)
+@cname("LLVMDisasmInstruction");
+
+alias LLVMErrorRef = void*;
+
+alias LLVMErrorTypeId = void*;
+
+extern fn LLVMErrorTypeId get_error_type_id(
+  LLVMErrorRef err)
+@cname("LLVMGetErrorTypeId");
+
+extern fn void consume_error(
+  LLVMErrorRef err)
+@cname("LLVMConsumeError");
+
+extern fn void cant_fail(
+  LLVMErrorRef err)
+@cname("LLVMCantFail");
+
+extern fn CChar* get_error_message(
+  LLVMErrorRef err)
+@cname("LLVMGetErrorMessage");
+
+extern fn void dispose_error_message(
+  CChar* err_msg)
+@cname("LLVMDisposeErrorMessage");
+
+extern fn LLVMErrorTypeId get_string_error_type_id()
+@cname("LLVMGetStringErrorTypeId");
+
+extern fn LLVMErrorRef create_string_error(
+  CChar* err_msg)
+@cname("LLVMCreateStringError");
+
+constdef LLVMByteOrdering : CUInt {
+  BIG_ENDIAN = 0,
+  LITTLE_ENDIAN = 1
+}
+
+alias LLVMTargetDataRef = void*;
+
+alias LLVMTargetLibraryInfoRef = void*;
+
+extern fn void initialize_all_target_infos()
+@cname("LLVMInitializeAllTargetInfos");
+
+extern fn void initialize_all_targets()
+@cname("LLVMInitializeAllTargets");
+
+extern fn void initialize_all_target_m_cs()
+@cname("LLVMInitializeAllTargetMCs");
+
+extern fn void initialize_all_asm_printers()
+@cname("LLVMInitializeAllAsmPrinters");
+
+extern fn void initialize_all_asm_parsers()
+@cname("LLVMInitializeAllAsmParsers");
+
+extern fn void initialize_all_disassemblers()
+@cname("LLVMInitializeAllDisassemblers");
+
+extern fn LLVMBool initialize_native_target()
+@cname("LLVMInitializeNativeTarget");
+
+extern fn LLVMBool initialize_native_asm_parser()
+@cname("LLVMInitializeNativeAsmParser");
+
+extern fn LLVMBool initialize_native_asm_printer()
+@cname("LLVMInitializeNativeAsmPrinter");
+
+extern fn LLVMBool initialize_native_disassembler()
+@cname("LLVMInitializeNativeDisassembler");
+
+extern fn LLVMTargetDataRef get_module_data_layout(
+  LLVMModuleRef m)
+@cname("LLVMGetModuleDataLayout");
+
+extern fn void set_module_data_layout(
+  LLVMModuleRef m,
+  LLVMTargetDataRef dl)
+@cname("LLVMSetModuleDataLayout");
+
+extern fn LLVMTargetDataRef create_target_data(
+  CChar* string_rep)
+@cname("LLVMCreateTargetData");
+
+extern fn void dispose_target_data(
+  LLVMTargetDataRef td)
+@cname("LLVMDisposeTargetData");
+
+extern fn void add_target_library_info(
+  LLVMTargetLibraryInfoRef tli,
+  LLVMPassManagerRef pm)
+@cname("LLVMAddTargetLibraryInfo");
+
+extern fn CChar* copy_string_rep_of_target_data(
+  LLVMTargetDataRef td)
+@cname("LLVMCopyStringRepOfTargetData");
+
+extern fn LLVMByteOrdering byte_order(
+  LLVMTargetDataRef td)
+@cname("LLVMByteOrder");
+
+extern fn CUInt pointer_size(
+  LLVMTargetDataRef td)
+@cname("LLVMPointerSize");
+
+extern fn CUInt pointer_size_for_as(
+  LLVMTargetDataRef td,
+  CUInt as)
+@cname("LLVMPointerSizeForAS");
+
+extern fn LLVMTypeRef int_ptr_type(
+  LLVMTargetDataRef td)
+@cname("LLVMIntPtrType");
+
+extern fn LLVMTypeRef int_ptr_type_for_as(
+  LLVMTargetDataRef td,
+  CUInt as)
+@cname("LLVMIntPtrTypeForAS");
+
+extern fn LLVMTypeRef int_ptr_type_in_context(
+  LLVMContextRef c,
+  LLVMTargetDataRef td)
+@cname("LLVMIntPtrTypeInContext");
+
+extern fn LLVMTypeRef int_ptr_type_for_as_in_context(
+  LLVMContextRef c,
+  LLVMTargetDataRef td,
+  CUInt as)
+@cname("LLVMIntPtrTypeForASInContext");
+
+extern fn CULongLong size_of_type_in_bits(
+  LLVMTargetDataRef td,
+  LLVMTypeRef ty)
+@cname("LLVMSizeOfTypeInBits");
+
+extern fn CULongLong store_size_of_type(
+  LLVMTargetDataRef td,
+  LLVMTypeRef ty)
+@cname("LLVMStoreSizeOfType");
+
+extern fn CULongLong abi_size_of_type(
+  LLVMTargetDataRef td,
+  LLVMTypeRef ty)
+@cname("LLVMABISizeOfType");
+
+extern fn CUInt abi_alignment_of_type(
+  LLVMTargetDataRef td,
+  LLVMTypeRef ty)
+@cname("LLVMABIAlignmentOfType");
+
+extern fn CUInt call_frame_alignment_of_type(
+  LLVMTargetDataRef td,
+  LLVMTypeRef ty)
+@cname("LLVMCallFrameAlignmentOfType");
+
+extern fn CUInt preferred_alignment_of_type(
+  LLVMTargetDataRef td,
+  LLVMTypeRef ty)
+@cname("LLVMPreferredAlignmentOfType");
+
+extern fn CUInt preferred_alignment_of_global(
+  LLVMTargetDataRef td,
+  LLVMValueRef global_var)
+@cname("LLVMPreferredAlignmentOfGlobal");
+
+extern fn CUInt element_at_offset(
+  LLVMTargetDataRef td,
+  LLVMTypeRef struct_ty,
+  CULongLong offset)
+@cname("LLVMElementAtOffset");
+
+extern fn CULongLong offset_of_element(
+  LLVMTargetDataRef td,
+  LLVMTypeRef struct_ty,
+  CUInt element)
+@cname("LLVMOffsetOfElement");
+
+alias LLVMTargetMachineOptionsRef = void*;
+
+alias LLVMTargetMachineRef = void*;
+
+alias LLVMTargetRef = void*;
+
+constdef LLVMCodeGenOptLevel : CUInt {
+  CODE_GEN_LEVEL_NONE = 0,
+  CODE_GEN_LEVEL_LESS = 1,
+  CODE_GEN_LEVEL_DEFAULT = 2,
+  CODE_GEN_LEVEL_AGGRESSIVE = 3
+}
+
+constdef LLVMRelocMode : CUInt {
+  RELOC_DEFAULT = 0,
+  RELOC_STATIC = 1,
+  RELOC_PIC = 2,
+  RELOC_DYNAMIC_NO_PIC = 3,
+  RELOC_ROPI = 4,
+  RELOC_RWPI = 5,
+  RELOC_ROPI_RWPI = 6
+}
+
+constdef LLVMCodeModel : CUInt {
+  CODE_MODEL_DEFAULT = 0,
+  CODE_MODEL_JIT_DEFAULT = 1,
+  CODE_MODEL_TINY = 2,
+  CODE_MODEL_SMALL = 3,
+  CODE_MODEL_KERNEL = 4,
+  CODE_MODEL_MEDIUM = 5,
+  CODE_MODEL_LARGE = 6
+}
+
+constdef LLVMCodeGenFileType : CUInt {
+  ASSEMBLY_FILE = 0,
+  OBJECT_FILE = 1
+}
+
+constdef LLVMGlobalISelAbortMode : CUInt {
+  GLOBAL_I_SEL_ABORT_ENABLE = 0,
+  GLOBAL_I_SEL_ABORT_DISABLE = 1,
+  GLOBAL_I_SEL_ABORT_DISABLE_WITH_DIAG = 2
+}
+
+extern fn LLVMTargetRef get_first_target()
+@cname("LLVMGetFirstTarget");
+
+extern fn LLVMTargetRef get_next_target(
+  LLVMTargetRef t)
+@cname("LLVMGetNextTarget");
+
+extern fn LLVMTargetRef get_target_from_name(
+  CChar* name)
+@cname("LLVMGetTargetFromName");
+
+extern fn LLVMBool get_target_from_triple(
+  CChar* triple,
+  LLVMTargetRef* t,
+  CChar** error_message)
+@cname("LLVMGetTargetFromTriple");
+
+extern fn CChar* get_target_name(
+  LLVMTargetRef t)
+@cname("LLVMGetTargetName");
+
+extern fn CChar* get_target_description(
+  LLVMTargetRef t)
+@cname("LLVMGetTargetDescription");
+
+extern fn LLVMBool target_has_jit(
+  LLVMTargetRef t)
+@cname("LLVMTargetHasJIT");
+
+extern fn LLVMBool target_has_target_machine(
+  LLVMTargetRef t)
+@cname("LLVMTargetHasTargetMachine");
+
+extern fn LLVMBool target_has_asm_backend(
+  LLVMTargetRef t)
+@cname("LLVMTargetHasAsmBackend");
+
+extern fn LLVMTargetMachineOptionsRef create_target_machine_options()
+@cname("LLVMCreateTargetMachineOptions");
+
+extern fn void dispose_target_machine_options(
+  LLVMTargetMachineOptionsRef options)
+@cname("LLVMDisposeTargetMachineOptions");
+
+extern fn void target_machine_options_set_cpu(
+  LLVMTargetMachineOptionsRef options,
+  CChar* cpu)
+@cname("LLVMTargetMachineOptionsSetCPU");
+
+extern fn void target_machine_options_set_features(
+  LLVMTargetMachineOptionsRef options,
+  CChar* features)
+@cname("LLVMTargetMachineOptionsSetFeatures");
+
+extern fn void target_machine_options_set_abi(
+  LLVMTargetMachineOptionsRef options,
+  CChar* abi)
+@cname("LLVMTargetMachineOptionsSetABI");
+
+extern fn void target_machine_options_set_code_gen_opt_level(
+  LLVMTargetMachineOptionsRef options,
+  LLVMCodeGenOptLevel level)
+@cname("LLVMTargetMachineOptionsSetCodeGenOptLevel");
+
+extern fn void target_machine_options_set_reloc_mode(
+  LLVMTargetMachineOptionsRef options,
+  LLVMRelocMode reloc)
+@cname("LLVMTargetMachineOptionsSetRelocMode");
+
+extern fn void target_machine_options_set_code_model(
+  LLVMTargetMachineOptionsRef options,
+  LLVMCodeModel code_model)
+@cname("LLVMTargetMachineOptionsSetCodeModel");
+
+extern fn LLVMTargetMachineRef create_target_machine_with_options(
+  LLVMTargetRef t,
+  CChar* triple,
+  LLVMTargetMachineOptionsRef options)
+@cname("LLVMCreateTargetMachineWithOptions");
+
+extern fn LLVMTargetMachineRef create_target_machine(
+  LLVMTargetRef t,
+  CChar* triple,
+  CChar* cpu,
+  CChar* features,
+  LLVMCodeGenOptLevel level,
+  LLVMRelocMode reloc,
+  LLVMCodeModel code_model)
+@cname("LLVMCreateTargetMachine");
+
+extern fn void dispose_target_machine(
+  LLVMTargetMachineRef t)
+@cname("LLVMDisposeTargetMachine");
+
+extern fn LLVMTargetRef get_target_machine_target(
+  LLVMTargetMachineRef t)
+@cname("LLVMGetTargetMachineTarget");
+
+extern fn CChar* get_target_machine_triple(
+  LLVMTargetMachineRef t)
+@cname("LLVMGetTargetMachineTriple");
+
+extern fn CChar* get_target_machine_cpu(
+  LLVMTargetMachineRef t)
+@cname("LLVMGetTargetMachineCPU");
+
+extern fn CChar* get_target_machine_feature_string(
+  LLVMTargetMachineRef t)
+@cname("LLVMGetTargetMachineFeatureString");
+
+extern fn LLVMTargetDataRef create_target_data_layout(
+  LLVMTargetMachineRef t)
+@cname("LLVMCreateTargetDataLayout");
+
+extern fn void set_target_machine_asm_verbosity(
+  LLVMTargetMachineRef t,
+  LLVMBool verbose_asm)
+@cname("LLVMSetTargetMachineAsmVerbosity");
+
+extern fn void set_target_machine_fast_i_sel(
+  LLVMTargetMachineRef t,
+  LLVMBool enable)
+@cname("LLVMSetTargetMachineFastISel");
+
+extern fn void set_target_machine_global_i_sel(
+  LLVMTargetMachineRef t,
+  LLVMBool enable)
+@cname("LLVMSetTargetMachineGlobalISel");
+
+extern fn void set_target_machine_global_i_sel_abort(
+  LLVMTargetMachineRef t,
+  LLVMGlobalISelAbortMode mode)
+@cname("LLVMSetTargetMachineGlobalISelAbort");
+
+extern fn void set_target_machine_machine_outliner(
+  LLVMTargetMachineRef t,
+  LLVMBool enable)
+@cname("LLVMSetTargetMachineMachineOutliner");
+
+extern fn LLVMBool target_machine_emit_to_file(
+  LLVMTargetMachineRef t,
+  LLVMModuleRef m,
+  CChar* filename,
+  LLVMCodeGenFileType codegen,
+  CChar** error_message)
+@cname("LLVMTargetMachineEmitToFile");
+
+extern fn LLVMBool target_machine_emit_to_memory_buffer(
+  LLVMTargetMachineRef t,
+  LLVMModuleRef m,
+  LLVMCodeGenFileType codegen,
+  CChar** error_message,
+  LLVMMemoryBufferRef* out_mem_buf)
+@cname("LLVMTargetMachineEmitToMemoryBuffer");
+
+extern fn CChar* get_default_target_triple()
+@cname("LLVMGetDefaultTargetTriple");
+
+extern fn CChar* normalize_target_triple(
+  CChar* triple)
+@cname("LLVMNormalizeTargetTriple");
+
+extern fn CChar* get_host_cpu_name()
+@cname("LLVMGetHostCPUName");
+
+extern fn CChar* get_host_cpu_features()
+@cname("LLVMGetHostCPUFeatures");
+
+extern fn void add_analysis_passes(
+  LLVMTargetMachineRef t,
+  LLVMPassManagerRef pm)
+@cname("LLVMAddAnalysisPasses");
+
+extern fn void link_in_mcjit()
+@cname("LLVMLinkInMCJIT");
+
+extern fn void link_in_interpreter()
+@cname("LLVMLinkInInterpreter");
+
+alias LLVMGenericValueRef = void*;
+
+alias LLVMExecutionEngineRef = void*;
+
+alias LLVMMCJITMemoryManagerRef = void*;
+
+
+struct LLVMMCJITCompilerOptions {
+  CUInt opt_level;
+  LLVMCodeModel code_model;
+  LLVMBool no_frame_pointer_elim;
+  LLVMBool enable_fast_i_sel;
+  LLVMMCJITMemoryManagerRef mcjmm;
+}
+
+extern fn LLVMGenericValueRef create_generic_value_of_int(
+  LLVMTypeRef ty,
+  CULongLong n,
+  LLVMBool is_signed)
+@cname("LLVMCreateGenericValueOfInt");
+
+extern fn LLVMGenericValueRef create_generic_value_of_pointer(
+  void* p)
+@cname("LLVMCreateGenericValueOfPointer");
+
+extern fn LLVMGenericValueRef create_generic_value_of_float(
+  LLVMTypeRef ty,
+  double n)
+@cname("LLVMCreateGenericValueOfFloat");
+
+extern fn CUInt generic_value_int_width(
+  LLVMGenericValueRef gen_val_ref)
+@cname("LLVMGenericValueIntWidth");
+
+extern fn CULongLong generic_value_to_int(
+  LLVMGenericValueRef gen_val,
+  LLVMBool is_signed)
+@cname("LLVMGenericValueToInt");
+
+extern fn void* generic_value_to_pointer(
+  LLVMGenericValueRef gen_val)
+@cname("LLVMGenericValueToPointer");
+
+extern fn double generic_value_to_float(
+  LLVMTypeRef ty_ref,
+  LLVMGenericValueRef gen_val)
+@cname("LLVMGenericValueToFloat");
+
+extern fn void dispose_generic_value(
+  LLVMGenericValueRef gen_val)
+@cname("LLVMDisposeGenericValue");
+
+extern fn LLVMBool create_execution_engine_for_module(
+  LLVMExecutionEngineRef* out_ee,
+  LLVMModuleRef m,
+  CChar** out_error)
+@cname("LLVMCreateExecutionEngineForModule");
+
+extern fn LLVMBool create_interpreter_for_module(
+  LLVMExecutionEngineRef* out_interp,
+  LLVMModuleRef m,
+  CChar** out_error)
+@cname("LLVMCreateInterpreterForModule");
+
+extern fn LLVMBool create_jit_compiler_for_module(
+  LLVMExecutionEngineRef* out_jit,
+  LLVMModuleRef m,
+  CUInt opt_level,
+  CChar** out_error)
+@cname("LLVMCreateJITCompilerForModule");
+
+extern fn void initialize_mcjit_compiler_options(
+  LLVMMCJITCompilerOptions* options,
+  sz size_of_options)
+@cname("LLVMInitializeMCJITCompilerOptions");
+
+extern fn LLVMBool create_mcjit_compiler_for_module(
+  LLVMExecutionEngineRef* out_jit,
+  LLVMModuleRef m,
+  LLVMMCJITCompilerOptions* options,
+  sz size_of_options,
+  CChar** out_error)
+@cname("LLVMCreateMCJITCompilerForModule");
+
+extern fn void dispose_execution_engine(
+  LLVMExecutionEngineRef ee)
+@cname("LLVMDisposeExecutionEngine");
+
+extern fn void run_static_constructors(
+  LLVMExecutionEngineRef ee)
+@cname("LLVMRunStaticConstructors");
+
+extern fn void run_static_destructors(
+  LLVMExecutionEngineRef ee)
+@cname("LLVMRunStaticDestructors");
+
+extern fn CInt run_function_as_main(
+  LLVMExecutionEngineRef ee,
+  LLVMValueRef f,
+  CUInt arg_c,
+  CChar** arg_v,
+  CChar** env_p)
+@cname("LLVMRunFunctionAsMain");
+
+extern fn LLVMGenericValueRef run_function(
+  LLVMExecutionEngineRef ee,
+  LLVMValueRef f,
+  CUInt num_args,
+  LLVMGenericValueRef* args)
+@cname("LLVMRunFunction");
+
+extern fn void free_machine_code_for_function(
+  LLVMExecutionEngineRef ee,
+  LLVMValueRef f)
+@cname("LLVMFreeMachineCodeForFunction");
+
+extern fn void add_module(
+  LLVMExecutionEngineRef ee,
+  LLVMModuleRef m)
+@cname("LLVMAddModule");
+
+extern fn LLVMBool remove_module(
+  LLVMExecutionEngineRef ee,
+  LLVMModuleRef m,
+  LLVMModuleRef* out_mod,
+  CChar** out_error)
+@cname("LLVMRemoveModule");
+
+extern fn LLVMBool find_function(
+  LLVMExecutionEngineRef ee,
+  CChar* name,
+  LLVMValueRef* out_fn)
+@cname("LLVMFindFunction");
+
+extern fn void* recompile_and_relink_function(
+  LLVMExecutionEngineRef ee,
+  LLVMValueRef _fn)
+@cname("LLVMRecompileAndRelinkFunction");
+
+extern fn LLVMTargetDataRef get_execution_engine_target_data(
+  LLVMExecutionEngineRef ee)
+@cname("LLVMGetExecutionEngineTargetData");
+
+extern fn LLVMTargetMachineRef get_execution_engine_target_machine(
+  LLVMExecutionEngineRef ee)
+@cname("LLVMGetExecutionEngineTargetMachine");
+
+extern fn void add_global_mapping(
+  LLVMExecutionEngineRef ee,
+  LLVMValueRef global,
+  void* addr)
+@cname("LLVMAddGlobalMapping");
+
+extern fn void* get_pointer_to_global(
+  LLVMExecutionEngineRef ee,
+  LLVMValueRef global)
+@cname("LLVMGetPointerToGlobal");
+
+extern fn ulong get_global_value_address(
+  LLVMExecutionEngineRef ee,
+  CChar* name)
+@cname("LLVMGetGlobalValueAddress");
+
+extern fn ulong get_function_address(
+  LLVMExecutionEngineRef ee,
+  CChar* name)
+@cname("LLVMGetFunctionAddress");
+
+extern fn LLVMBool execution_engine_get_err_msg(
+  LLVMExecutionEngineRef ee,
+  CChar** out_error)
+@cname("LLVMExecutionEngineGetErrMsg");
+
+alias LLVMMemoryManagerAllocateCodeSectionCallback = fn char*(
+  void* opaque,
+  uptr size,
+  CUInt alignment,
+  CUInt section_id,
+  CChar* section_name);
+
+alias LLVMMemoryManagerAllocateDataSectionCallback = fn char*(
+  void* opaque,
+  uptr size,
+  CUInt alignment,
+  CUInt section_id,
+  CChar* section_name,
+  LLVMBool is_read_only);
+
+alias LLVMMemoryManagerFinalizeMemoryCallback = fn LLVMBool(
+  void* opaque,
+  CChar** err_msg);
+
+alias LLVMMemoryManagerDestroyCallback = fn void(
+  void* opaque);
+
+extern fn LLVMMCJITMemoryManagerRef create_simple_mcjit_memory_manager(
+  void* opaque,
+  LLVMMemoryManagerAllocateCodeSectionCallback allocate_code_section,
+  LLVMMemoryManagerAllocateDataSectionCallback allocate_data_section,
+  LLVMMemoryManagerFinalizeMemoryCallback finalize_memory,
+  LLVMMemoryManagerDestroyCallback destroy)
+@cname("LLVMCreateSimpleMCJITMemoryManager");
+
+extern fn void dispose_mcjit_memory_manager(
+  LLVMMCJITMemoryManagerRef mm)
+@cname("LLVMDisposeMCJITMemoryManager");
+
+extern fn LLVMJITEventListenerRef create_gdb_registration_listener()
+@cname("LLVMCreateGDBRegistrationListener");
+
+extern fn LLVMJITEventListenerRef create_intel_jit_event_listener()
+@cname("LLVMCreateIntelJITEventListener");
+
+extern fn LLVMJITEventListenerRef create_o_profile_jit_event_listener()
+@cname("LLVMCreateOProfileJITEventListener");
+
+extern fn LLVMJITEventListenerRef create_perf_jit_event_listener()
+@cname("LLVMCreatePerfJITEventListener");
+
+extern fn LLVMBool parse_ir_in_context(
+  LLVMContextRef context_ref,
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_m,
+  CChar** out_message)
+@cname("LLVMParseIRInContext");
+
+extern fn LLVMBool parse_ir_in_context_2(
+  LLVMContextRef context_ref,
+  LLVMMemoryBufferRef mem_buf,
+  LLVMModuleRef* out_m,
+  CChar** out_message)
+@cname("LLVMParseIRInContext2");
+
+alias LLVMOrcJITTargetAddress = ulong;
+
+alias LLVMOrcExecutorAddress = ulong;
+
+constdef LLVMJITSymbolGenericFlags : CUInt {
+  JIT_SYMBOL_GENERIC_FLAGS_NONE = 0,
+  JIT_SYMBOL_GENERIC_FLAGS_EXPORTED = 1,
+  JIT_SYMBOL_GENERIC_FLAGS_WEAK = 2,
+  JIT_SYMBOL_GENERIC_FLAGS_CALLABLE = 4,
+  JIT_SYMBOL_GENERIC_FLAGS_MATERIALIZATION_SIDE_EFFECTS_ONLY = 8
+}
+
+alias LLVMJITSymbolTargetFlags = char;
+
+
+struct LLVMJITSymbolFlags {
+  char generic_flags;
+  char target_flags;
+}
+
+
+struct LLVMJITEvaluatedSymbol {
+  LLVMOrcExecutorAddress address;
+  LLVMJITSymbolFlags flags;
+}
+
+alias LLVMOrcExecutionSessionRef = void*;
+
+alias LLVMOrcErrorReporterFunction = fn void(
+  void* ctx,
+  LLVMErrorRef err);
+
+alias LLVMOrcSymbolStringPoolRef = void*;
+
+alias LLVMOrcSymbolStringPoolEntryRef = void*;
+
+
+struct LLVMOrcCSymbolFlagsMapPair {
+  LLVMOrcSymbolStringPoolEntryRef name;
+  LLVMJITSymbolFlags flags;
+}
+
+alias LLVMOrcCSymbolFlagsMapPairs = LLVMOrcCSymbolFlagsMapPair*;
+
+
+struct LLVMOrcCSymbolMapPair {
+  LLVMOrcSymbolStringPoolEntryRef name;
+  LLVMJITEvaluatedSymbol sym;
+}
+
+alias LLVMOrcCSymbolMapPairs = LLVMOrcCSymbolMapPair*;
+
+
+struct LLVMOrcCSymbolAliasMapEntry {
+  LLVMOrcSymbolStringPoolEntryRef name;
+  LLVMJITSymbolFlags flags;
+}
+
+
+struct LLVMOrcCSymbolAliasMapPair {
+  LLVMOrcSymbolStringPoolEntryRef name;
+  LLVMOrcCSymbolAliasMapEntry entry;
+}
+
+alias LLVMOrcCSymbolAliasMapPairs = LLVMOrcCSymbolAliasMapPair*;
+
+alias LLVMOrcJITDylibRef = void*;
+
+
+struct LLVMOrcCSymbolsList {
+  LLVMOrcSymbolStringPoolEntryRef* symbols;
+  sz length;
+}
+
+
+struct LLVMOrcCDependenceMapPair {
+  LLVMOrcJITDylibRef jd;
+  LLVMOrcCSymbolsList names;
+}
+
+alias LLVMOrcCDependenceMapPairs = LLVMOrcCDependenceMapPair*;
+
+
+struct LLVMOrcCSymbolDependenceGroup {
+  LLVMOrcCSymbolsList symbols;
+  LLVMOrcCDependenceMapPairs dependencies;
+  sz num_dependencies;
+}
+
+constdef LLVMOrcLookupKind : CUInt {
+  ORC_LOOKUP_KIND_STATIC = 0,
+  ORC_LOOKUP_KIND_DL_SYM = 1
+}
+
+constdef LLVMOrcJITDylibLookupFlags : CUInt {
+  ORC_JIT_DYLIB_LOOKUP_FLAGS_MATCH_EXPORTED_SYMBOLS_ONLY = 0,
+  ORC_JIT_DYLIB_LOOKUP_FLAGS_MATCH_ALL_SYMBOLS = 1
+}
+
+
+struct LLVMOrcCJITDylibSearchOrderElement {
+  LLVMOrcJITDylibRef jd;
+  LLVMOrcJITDylibLookupFlags jd_lookup_flags;
+}
+
+alias LLVMOrcCJITDylibSearchOrder = LLVMOrcCJITDylibSearchOrderElement*;
+
+constdef LLVMOrcSymbolLookupFlags : CUInt {
+  ORC_SYMBOL_LOOKUP_FLAGS_REQUIRED_SYMBOL = 0,
+  ORC_SYMBOL_LOOKUP_FLAGS_WEAKLY_REFERENCED_SYMBOL = 1
+}
+
+
+struct LLVMOrcCLookupSetElement {
+  LLVMOrcSymbolStringPoolEntryRef name;
+  LLVMOrcSymbolLookupFlags lookup_flags;
+}
+
+alias LLVMOrcCLookupSet = LLVMOrcCLookupSetElement*;
+
+alias LLVMOrcMaterializationUnitRef = void*;
+
+alias LLVMOrcMaterializationResponsibilityRef = void*;
+
+alias LLVMOrcMaterializationUnitMaterializeFunction = fn void(
+  void* ctx,
+  LLVMOrcMaterializationResponsibilityRef mr);
+
+alias LLVMOrcMaterializationUnitDiscardFunction = fn void(
+  void* ctx,
+  LLVMOrcJITDylibRef jd,
+  LLVMOrcSymbolStringPoolEntryRef symbol);
+
+alias LLVMOrcMaterializationUnitDestroyFunction = fn void(
+  void* ctx);
+
+alias LLVMOrcResourceTrackerRef = void*;
+
+alias LLVMOrcDefinitionGeneratorRef = void*;
+
+alias LLVMOrcLookupStateRef = void*;
+
+alias LLVMOrcCAPIDefinitionGeneratorTryToGenerateFunction = fn LLVMErrorRef(
+  LLVMOrcDefinitionGeneratorRef generator_obj,
+  void* ctx,
+  LLVMOrcLookupStateRef* lookup_state,
+  LLVMOrcLookupKind kind,
+  LLVMOrcJITDylibRef jd,
+  LLVMOrcJITDylibLookupFlags jd_lookup_flags,
+  LLVMOrcCLookupSet lookup_set,
+  sz lookup_set_size);
+
+alias LLVMOrcDisposeCAPIDefinitionGeneratorFunction = fn void(
+  void* ctx);
+
+alias LLVMOrcSymbolPredicate = fn CInt(
+  void* ctx,
+  LLVMOrcSymbolStringPoolEntryRef sym);
+
+alias LLVMOrcThreadSafeContextRef = void*;
+
+alias LLVMOrcThreadSafeModuleRef = void*;
+
+alias LLVMOrcGenericIRModuleOperationFunction = fn LLVMErrorRef(
+  void* ctx,
+  LLVMModuleRef m);
+
+alias LLVMOrcJITTargetMachineBuilderRef = void*;
+
+alias LLVMOrcObjectLayerRef = void*;
+
+alias LLVMOrcObjectLinkingLayerRef = void*;
+
+alias LLVMOrcIRTransformLayerRef = void*;
+
+alias LLVMOrcIRTransformLayerTransformFunction = fn LLVMErrorRef(
+  void* ctx,
+  LLVMOrcThreadSafeModuleRef* mod_in_out,
+  LLVMOrcMaterializationResponsibilityRef mr);
+
+alias LLVMOrcObjectTransformLayerRef = void*;
+
+alias LLVMOrcObjectTransformLayerTransformFunction = fn LLVMErrorRef(
+  void* ctx,
+  LLVMMemoryBufferRef* obj_in_out);
+
+alias LLVMOrcIndirectStubsManagerRef = void*;
+
+alias LLVMOrcLazyCallThroughManagerRef = void*;
+
+alias LLVMOrcDumpObjectsRef = void*;
+
+extern fn void orc_execution_session_set_error_reporter(
+  LLVMOrcExecutionSessionRef es,
+  LLVMOrcErrorReporterFunction report_error,
+  void* ctx)
+@cname("LLVMOrcExecutionSessionSetErrorReporter");
+
+extern fn LLVMOrcSymbolStringPoolRef orc_execution_session_get_symbol_string_pool(
+  LLVMOrcExecutionSessionRef es)
+@cname("LLVMOrcExecutionSessionGetSymbolStringPool");
+
+extern fn void orc_symbol_string_pool_clear_dead_entries(
+  LLVMOrcSymbolStringPoolRef ssp)
+@cname("LLVMOrcSymbolStringPoolClearDeadEntries");
+
+extern fn LLVMOrcSymbolStringPoolEntryRef orc_execution_session_intern(
+  LLVMOrcExecutionSessionRef es,
+  CChar* name)
+@cname("LLVMOrcExecutionSessionIntern");
+
+alias LLVMOrcExecutionSessionLookupHandleResultFunction = fn void(
+  LLVMErrorRef err,
+  LLVMOrcCSymbolMapPairs result,
+  sz num_pairs,
+  void* ctx);
+
+extern fn void orc_execution_session_lookup(
+  LLVMOrcExecutionSessionRef es,
+  LLVMOrcLookupKind k,
+  LLVMOrcCJITDylibSearchOrder search_order,
+  sz search_order_size,
+  LLVMOrcCLookupSet symbols,
+  sz symbols_size,
+  LLVMOrcExecutionSessionLookupHandleResultFunction handle_result,
+  void* ctx)
+@cname("LLVMOrcExecutionSessionLookup");
+
+extern fn void orc_retain_symbol_string_pool_entry(
+  LLVMOrcSymbolStringPoolEntryRef s)
+@cname("LLVMOrcRetainSymbolStringPoolEntry");
+
+extern fn void orc_release_symbol_string_pool_entry(
+  LLVMOrcSymbolStringPoolEntryRef s)
+@cname("LLVMOrcReleaseSymbolStringPoolEntry");
+
+extern fn CChar* orc_symbol_string_pool_entry_str(
+  LLVMOrcSymbolStringPoolEntryRef s)
+@cname("LLVMOrcSymbolStringPoolEntryStr");
+
+extern fn void orc_release_resource_tracker(
+  LLVMOrcResourceTrackerRef rt)
+@cname("LLVMOrcReleaseResourceTracker");
+
+extern fn void orc_resource_tracker_transfer_to(
+  LLVMOrcResourceTrackerRef src_rt,
+  LLVMOrcResourceTrackerRef dst_rt)
+@cname("LLVMOrcResourceTrackerTransferTo");
+
+extern fn LLVMErrorRef orc_resource_tracker_remove(
+  LLVMOrcResourceTrackerRef rt)
+@cname("LLVMOrcResourceTrackerRemove");
+
+extern fn void orc_dispose_definition_generator(
+  LLVMOrcDefinitionGeneratorRef dg)
+@cname("LLVMOrcDisposeDefinitionGenerator");
+
+extern fn void orc_dispose_materialization_unit(
+  LLVMOrcMaterializationUnitRef mu)
+@cname("LLVMOrcDisposeMaterializationUnit");
+
+extern fn LLVMOrcMaterializationUnitRef orc_create_custom_materialization_unit(
+  CChar* name,
+  void* ctx,
+  LLVMOrcCSymbolFlagsMapPairs syms,
+  sz num_syms,
+  LLVMOrcSymbolStringPoolEntryRef init_sym,
+  LLVMOrcMaterializationUnitMaterializeFunction materialize,
+  LLVMOrcMaterializationUnitDiscardFunction discard,
+  LLVMOrcMaterializationUnitDestroyFunction destroy)
+@cname("LLVMOrcCreateCustomMaterializationUnit");
+
+extern fn LLVMOrcMaterializationUnitRef orc_absolute_symbols(
+  LLVMOrcCSymbolMapPairs syms,
+  sz num_pairs)
+@cname("LLVMOrcAbsoluteSymbols");
+
+extern fn LLVMOrcMaterializationUnitRef orc_lazy_reexports(
+  LLVMOrcLazyCallThroughManagerRef lctm,
+  LLVMOrcIndirectStubsManagerRef ism,
+  LLVMOrcJITDylibRef source_ref,
+  LLVMOrcCSymbolAliasMapPairs callable_aliases,
+  sz num_pairs)
+@cname("LLVMOrcLazyReexports");
+
+extern fn void orc_dispose_materialization_responsibility(
+  LLVMOrcMaterializationResponsibilityRef mr)
+@cname("LLVMOrcDisposeMaterializationResponsibility");
+
+extern fn LLVMOrcJITDylibRef orc_materialization_responsibility_get_target_dylib(
+  LLVMOrcMaterializationResponsibilityRef mr)
+@cname("LLVMOrcMaterializationResponsibilityGetTargetDylib");
+
+extern fn LLVMOrcExecutionSessionRef orc_materialization_responsibility_get_execution_session(
+  LLVMOrcMaterializationResponsibilityRef mr)
+@cname("LLVMOrcMaterializationResponsibilityGetExecutionSession");
+
+extern fn LLVMOrcCSymbolFlagsMapPairs orc_materialization_responsibility_get_symbols(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  sz* num_pairs)
+@cname("LLVMOrcMaterializationResponsibilityGetSymbols");
+
+extern fn void orc_dispose_c_symbol_flags_map(
+  LLVMOrcCSymbolFlagsMapPairs pairs)
+@cname("LLVMOrcDisposeCSymbolFlagsMap");
+
+extern fn LLVMOrcSymbolStringPoolEntryRef orc_materialization_responsibility_get_initializer_symbol(
+  LLVMOrcMaterializationResponsibilityRef mr)
+@cname("LLVMOrcMaterializationResponsibilityGetInitializerSymbol");
+
+extern fn LLVMOrcSymbolStringPoolEntryRef* orc_materialization_responsibility_get_requested_symbols(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  sz* num_symbols)
+@cname("LLVMOrcMaterializationResponsibilityGetRequestedSymbols");
+
+extern fn void orc_dispose_symbols(
+  LLVMOrcSymbolStringPoolEntryRef* symbols)
+@cname("LLVMOrcDisposeSymbols");
+
+extern fn LLVMErrorRef orc_materialization_responsibility_notify_resolved(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  LLVMOrcCSymbolMapPairs symbols,
+  sz num_pairs)
+@cname("LLVMOrcMaterializationResponsibilityNotifyResolved");
+
+extern fn LLVMErrorRef orc_materialization_responsibility_notify_emitted(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  LLVMOrcCSymbolDependenceGroup* symbol_dep_groups,
+  sz num_symbol_dep_groups)
+@cname("LLVMOrcMaterializationResponsibilityNotifyEmitted");
+
+extern fn LLVMErrorRef orc_materialization_responsibility_define_materializing(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  LLVMOrcCSymbolFlagsMapPairs pairs,
+  sz num_pairs)
+@cname("LLVMOrcMaterializationResponsibilityDefineMaterializing");
+
+extern fn void orc_materialization_responsibility_fail_materialization(
+  LLVMOrcMaterializationResponsibilityRef mr)
+@cname("LLVMOrcMaterializationResponsibilityFailMaterialization");
+
+extern fn LLVMErrorRef orc_materialization_responsibility_replace(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  LLVMOrcMaterializationUnitRef mu)
+@cname("LLVMOrcMaterializationResponsibilityReplace");
+
+extern fn LLVMErrorRef orc_materialization_responsibility_delegate(
+  LLVMOrcMaterializationResponsibilityRef mr,
+  LLVMOrcSymbolStringPoolEntryRef* symbols,
+  sz num_symbols,
+  LLVMOrcMaterializationResponsibilityRef* result)
+@cname("LLVMOrcMaterializationResponsibilityDelegate");
+
+extern fn LLVMOrcJITDylibRef orc_execution_session_create_bare_jit_dylib(
+  LLVMOrcExecutionSessionRef es,
+  CChar* name)
+@cname("LLVMOrcExecutionSessionCreateBareJITDylib");
+
+extern fn LLVMErrorRef orc_execution_session_create_jit_dylib(
+  LLVMOrcExecutionSessionRef es,
+  LLVMOrcJITDylibRef* result,
+  CChar* name)
+@cname("LLVMOrcExecutionSessionCreateJITDylib");
+
+extern fn LLVMOrcJITDylibRef orc_execution_session_get_jit_dylib_by_name(
+  LLVMOrcExecutionSessionRef es,
+  CChar* name)
+@cname("LLVMOrcExecutionSessionGetJITDylibByName");
+
+extern fn LLVMOrcResourceTrackerRef orc_jit_dylib_create_resource_tracker(
+  LLVMOrcJITDylibRef jd)
+@cname("LLVMOrcJITDylibCreateResourceTracker");
+
+extern fn LLVMOrcResourceTrackerRef orc_jit_dylib_get_default_resource_tracker(
+  LLVMOrcJITDylibRef jd)
+@cname("LLVMOrcJITDylibGetDefaultResourceTracker");
+
+extern fn LLVMErrorRef orc_jit_dylib_define(
+  LLVMOrcJITDylibRef jd,
+  LLVMOrcMaterializationUnitRef mu)
+@cname("LLVMOrcJITDylibDefine");
+
+extern fn LLVMErrorRef orc_jit_dylib_clear(
+  LLVMOrcJITDylibRef jd)
+@cname("LLVMOrcJITDylibClear");
+
+extern fn void orc_jit_dylib_add_generator(
+  LLVMOrcJITDylibRef jd,
+  LLVMOrcDefinitionGeneratorRef dg)
+@cname("LLVMOrcJITDylibAddGenerator");
+
+extern fn LLVMOrcDefinitionGeneratorRef orc_create_custom_capi_definition_generator(
+  LLVMOrcCAPIDefinitionGeneratorTryToGenerateFunction f,
+  void* ctx,
+  LLVMOrcDisposeCAPIDefinitionGeneratorFunction dispose)
+@cname("LLVMOrcCreateCustomCAPIDefinitionGenerator");
+
+extern fn void orc_lookup_state_continue_lookup(
+  LLVMOrcLookupStateRef s,
+  LLVMErrorRef err)
+@cname("LLVMOrcLookupStateContinueLookup");
+
+extern fn LLVMErrorRef orc_create_dynamic_library_search_generator_for_process(
+  LLVMOrcDefinitionGeneratorRef* result,
+  CChar global_prefx,
+  LLVMOrcSymbolPredicate filter,
+  void* filter_ctx)
+@cname("LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess");
+
+extern fn LLVMErrorRef orc_create_dynamic_library_search_generator_for_path(
+  LLVMOrcDefinitionGeneratorRef* result,
+  CChar* file_name,
+  CChar global_prefix,
+  LLVMOrcSymbolPredicate filter,
+  void* filter_ctx)
+@cname("LLVMOrcCreateDynamicLibrarySearchGeneratorForPath");
+
+extern fn LLVMErrorRef orc_create_static_library_search_generator_for_path(
+  LLVMOrcDefinitionGeneratorRef* result,
+  LLVMOrcObjectLayerRef obj_layer,
+  CChar* file_name)
+@cname("LLVMOrcCreateStaticLibrarySearchGeneratorForPath");
+
+extern fn LLVMOrcThreadSafeContextRef orc_create_new_thread_safe_context()
+@cname("LLVMOrcCreateNewThreadSafeContext");
+
+extern fn LLVMOrcThreadSafeContextRef orc_create_new_thread_safe_context_from_context(
+  LLVMContextRef ctx)
+@cname("LLVMOrcCreateNewThreadSafeContextFromLLVMContext");
+
+extern fn void orc_dispose_thread_safe_context(
+  LLVMOrcThreadSafeContextRef ts_ctx)
+@cname("LLVMOrcDisposeThreadSafeContext");
+
+extern fn LLVMOrcThreadSafeModuleRef orc_create_new_thread_safe_module(
+  LLVMModuleRef m,
+  LLVMOrcThreadSafeContextRef ts_ctx)
+@cname("LLVMOrcCreateNewThreadSafeModule");
+
+extern fn void orc_dispose_thread_safe_module(
+  LLVMOrcThreadSafeModuleRef tsm)
+@cname("LLVMOrcDisposeThreadSafeModule");
+
+extern fn LLVMErrorRef orc_thread_safe_module_with_module_do(
+  LLVMOrcThreadSafeModuleRef tsm,
+  LLVMOrcGenericIRModuleOperationFunction f,
+  void* ctx)
+@cname("LLVMOrcThreadSafeModuleWithModuleDo");
+
+extern fn LLVMErrorRef orc_jit_target_machine_builder_detect_host(
+  LLVMOrcJITTargetMachineBuilderRef* result)
+@cname("LLVMOrcJITTargetMachineBuilderDetectHost");
+
+extern fn LLVMOrcJITTargetMachineBuilderRef orc_jit_target_machine_builder_create_from_target_machine(
+  LLVMTargetMachineRef tm)
+@cname("LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine");
+
+extern fn void orc_dispose_jit_target_machine_builder(
+  LLVMOrcJITTargetMachineBuilderRef jtmb)
+@cname("LLVMOrcDisposeJITTargetMachineBuilder");
+
+extern fn CChar* orc_jit_target_machine_builder_get_target_triple(
+  LLVMOrcJITTargetMachineBuilderRef jtmb)
+@cname("LLVMOrcJITTargetMachineBuilderGetTargetTriple");
+
+extern fn void orc_jit_target_machine_builder_set_target_triple(
+  LLVMOrcJITTargetMachineBuilderRef jtmb,
+  CChar* target_triple)
+@cname("LLVMOrcJITTargetMachineBuilderSetTargetTriple");
+
+extern fn LLVMErrorRef orc_object_layer_add_object_file(
+  LLVMOrcObjectLayerRef obj_layer,
+  LLVMOrcJITDylibRef jd,
+  LLVMMemoryBufferRef obj_buffer)
+@cname("LLVMOrcObjectLayerAddObjectFile");
+
+extern fn LLVMErrorRef orc_object_layer_add_object_file_with_rt(
+  LLVMOrcObjectLayerRef obj_layer,
+  LLVMOrcResourceTrackerRef rt,
+  LLVMMemoryBufferRef obj_buffer)
+@cname("LLVMOrcObjectLayerAddObjectFileWithRT");
+
+extern fn void orc_object_layer_emit(
+  LLVMOrcObjectLayerRef obj_layer,
+  LLVMOrcMaterializationResponsibilityRef r,
+  LLVMMemoryBufferRef obj_buffer)
+@cname("LLVMOrcObjectLayerEmit");
+
+extern fn void orc_dispose_object_layer(
+  LLVMOrcObjectLayerRef obj_layer)
+@cname("LLVMOrcDisposeObjectLayer");
+
+extern fn void orc_ir_transform_layer_emit(
+  LLVMOrcIRTransformLayerRef ir_transform_layer,
+  LLVMOrcMaterializationResponsibilityRef mr,
+  LLVMOrcThreadSafeModuleRef tsm)
+@cname("LLVMOrcIRTransformLayerEmit");
+
+extern fn void orc_ir_transform_layer_set_transform(
+  LLVMOrcIRTransformLayerRef ir_transform_layer,
+  LLVMOrcIRTransformLayerTransformFunction transform_function,
+  void* ctx)
+@cname("LLVMOrcIRTransformLayerSetTransform");
+
+extern fn void orc_object_transform_layer_set_transform(
+  LLVMOrcObjectTransformLayerRef obj_transform_layer,
+  LLVMOrcObjectTransformLayerTransformFunction transform_function,
+  void* ctx)
+@cname("LLVMOrcObjectTransformLayerSetTransform");
+
+extern fn LLVMOrcIndirectStubsManagerRef orc_create_local_indirect_stubs_manager(
+  CChar* target_triple)
+@cname("LLVMOrcCreateLocalIndirectStubsManager");
+
+extern fn void orc_dispose_indirect_stubs_manager(
+  LLVMOrcIndirectStubsManagerRef ism)
+@cname("LLVMOrcDisposeIndirectStubsManager");
+
+extern fn LLVMErrorRef orc_create_local_lazy_call_through_manager(
+  CChar* target_triple,
+  LLVMOrcExecutionSessionRef es,
+  LLVMOrcJITTargetAddress error_handler_addr,
+  LLVMOrcLazyCallThroughManagerRef* lctm)
+@cname("LLVMOrcCreateLocalLazyCallThroughManager");
+
+extern fn void orc_dispose_lazy_call_through_manager(
+  LLVMOrcLazyCallThroughManagerRef lctm)
+@cname("LLVMOrcDisposeLazyCallThroughManager");
+
+extern fn LLVMOrcDumpObjectsRef orc_create_dump_objects(
+  CChar* dump_dir,
+  CChar* identifier_override)
+@cname("LLVMOrcCreateDumpObjects");
+
+extern fn void orc_dispose_dump_objects(
+  LLVMOrcDumpObjectsRef dump_objects)
+@cname("LLVMOrcDisposeDumpObjects");
+
+extern fn LLVMErrorRef orc_dump_objects_call_operator(
+  LLVMOrcDumpObjectsRef dump_objects,
+  LLVMMemoryBufferRef* obj_buffer)
+@cname("LLVMOrcDumpObjects_CallOperator");
+
+alias LLVMOrcLLJITBuilderObjectLinkingLayerCreatorFunction = fn LLVMOrcObjectLayerRef(
+  void* ctx,
+  LLVMOrcExecutionSessionRef es,
+  CChar* triple);
+
+alias LLVMOrcLLJITBuilderRef = void*;
+
+alias LLVMOrcLLJITRef = void*;
+
+extern fn LLVMOrcLLJITBuilderRef orc_create_lljit_builder()
+@cname("LLVMOrcCreateLLJITBuilder");
+
+extern fn void orc_dispose_lljit_builder(
+  LLVMOrcLLJITBuilderRef builder)
+@cname("LLVMOrcDisposeLLJITBuilder");
+
+extern fn void orc_lljit_builder_set_jit_target_machine_builder(
+  LLVMOrcLLJITBuilderRef builder,
+  LLVMOrcJITTargetMachineBuilderRef jtmb)
+@cname("LLVMOrcLLJITBuilderSetJITTargetMachineBuilder");
+
+extern fn void orc_lljit_builder_set_object_linking_layer_creator(
+  LLVMOrcLLJITBuilderRef builder,
+  LLVMOrcLLJITBuilderObjectLinkingLayerCreatorFunction f,
+  void* ctx)
+@cname("LLVMOrcLLJITBuilderSetObjectLinkingLayerCreator");
+
+extern fn LLVMErrorRef orc_create_lljit(
+  LLVMOrcLLJITRef* result,
+  LLVMOrcLLJITBuilderRef builder)
+@cname("LLVMOrcCreateLLJIT");
+
+extern fn LLVMErrorRef orc_dispose_lljit(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcDisposeLLJIT");
+
+extern fn LLVMOrcExecutionSessionRef orc_lljit_get_execution_session(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetExecutionSession");
+
+extern fn LLVMOrcJITDylibRef orc_lljit_get_main_jit_dylib(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetMainJITDylib");
+
+extern fn CChar* orc_lljit_get_triple_string(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetTripleString");
+
+extern fn CChar orc_lljit_get_global_prefix(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetGlobalPrefix");
+
+extern fn LLVMOrcSymbolStringPoolEntryRef orc_lljit_mangle_and_intern(
+  LLVMOrcLLJITRef j,
+  CChar* unmangled_name)
+@cname("LLVMOrcLLJITMangleAndIntern");
+
+extern fn LLVMErrorRef orc_lljit_add_object_file(
+  LLVMOrcLLJITRef j,
+  LLVMOrcJITDylibRef jd,
+  LLVMMemoryBufferRef obj_buffer)
+@cname("LLVMOrcLLJITAddObjectFile");
+
+extern fn LLVMErrorRef orc_lljit_add_object_file_with_rt(
+  LLVMOrcLLJITRef j,
+  LLVMOrcResourceTrackerRef rt,
+  LLVMMemoryBufferRef obj_buffer)
+@cname("LLVMOrcLLJITAddObjectFileWithRT");
+
+extern fn LLVMErrorRef orc_lljit_add_ir_module(
+  LLVMOrcLLJITRef j,
+  LLVMOrcJITDylibRef jd,
+  LLVMOrcThreadSafeModuleRef tsm)
+@cname("LLVMOrcLLJITAddLLVMIRModule");
+
+extern fn LLVMErrorRef orc_lljit_add_ir_module_with_rt(
+  LLVMOrcLLJITRef j,
+  LLVMOrcResourceTrackerRef jd,
+  LLVMOrcThreadSafeModuleRef tsm)
+@cname("LLVMOrcLLJITAddLLVMIRModuleWithRT");
+
+extern fn LLVMErrorRef orc_lljit_lookup(
+  LLVMOrcLLJITRef j,
+  LLVMOrcExecutorAddress* result,
+  CChar* name)
+@cname("LLVMOrcLLJITLookup");
+
+extern fn LLVMOrcObjectLayerRef orc_lljit_get_obj_linking_layer(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetObjLinkingLayer");
+
+extern fn LLVMOrcObjectTransformLayerRef orc_lljit_get_obj_transform_layer(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetObjTransformLayer");
+
+extern fn LLVMOrcIRTransformLayerRef orc_lljit_get_ir_transform_layer(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetIRTransformLayer");
+
+extern fn CChar* orc_lljit_get_data_layout_str(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITGetDataLayoutStr");
+
+extern fn LLVMErrorRef orc_lljit_enable_debug_support(
+  LLVMOrcLLJITRef j)
+@cname("LLVMOrcLLJITEnableDebugSupport");
+
+constdef LLVMLinkerMode : CUInt {
+  LINKER_DESTROY_SOURCE = 0,
+  LINKER_PRESERVE_SOURCE_REMOVED = 1
+}
+
+extern fn LLVMBool link_modules_2(
+  LLVMModuleRef dest,
+  LLVMModuleRef src)
+@cname("LLVMLinkModules2");
+
+alias LLVMSectionIteratorRef = void*;
+
+alias LLVMSymbolIteratorRef = void*;
+
+alias LLVMRelocationIteratorRef = void*;
+
+constdef LLVMBinaryType : CUInt {
+  BINARY_TYPE_ARCHIVE = 0,
+  BINARY_TYPE_MACH_O_UNIVERSAL_BINARY = 1,
+  BINARY_TYPE_COFF_IMPORT_FILE = 2,
+  BINARY_TYPE_IR = 3,
+  BINARY_TYPE_WIN_RES = 4,
+  BINARY_TYPE_COFF = 5,
+  BINARY_TYPE_ELF32_L = 6,
+  BINARY_TYPE_ELF32_B = 7,
+  BINARY_TYPE_ELF64_L = 8,
+  BINARY_TYPE_ELF64_B = 9,
+  BINARY_TYPE_MACH_O32_L = 10,
+  BINARY_TYPE_MACH_O32_B = 11,
+  BINARY_TYPE_MACH_O64_L = 12,
+  BINARY_TYPE_MACH_O64_B = 13,
+  BINARY_TYPE_WASM = 14,
+  BINARY_TYPE_OFFLOAD = 15,
+  BINARY_TYPE_D_XCONTAINER = 16
+}
+
+extern fn LLVMBinaryRef create_binary(
+  LLVMMemoryBufferRef mem_buf,
+  LLVMContextRef context,
+  CChar** error_message)
+@cname("LLVMCreateBinary");
+
+extern fn void dispose_binary(
+  LLVMBinaryRef br)
+@cname("LLVMDisposeBinary");
+
+extern fn LLVMMemoryBufferRef binary_copy_memory_buffer(
+  LLVMBinaryRef br)
+@cname("LLVMBinaryCopyMemoryBuffer");
+
+extern fn LLVMBinaryType binary_get_type(
+  LLVMBinaryRef br)
+@cname("LLVMBinaryGetType");
+
+extern fn LLVMBinaryRef mach_o_universal_binary_copy_object_for_arch(
+  LLVMBinaryRef br,
+  CChar* arch,
+  sz arch_len,
+  CChar** error_message)
+@cname("LLVMMachOUniversalBinaryCopyObjectForArch");
+
+extern fn LLVMSectionIteratorRef object_file_copy_section_iterator(
+  LLVMBinaryRef br)
+@cname("LLVMObjectFileCopySectionIterator");
+
+extern fn LLVMBool object_file_is_section_iterator_at_end(
+  LLVMBinaryRef br,
+  LLVMSectionIteratorRef si)
+@cname("LLVMObjectFileIsSectionIteratorAtEnd");
+
+extern fn LLVMSymbolIteratorRef object_file_copy_symbol_iterator(
+  LLVMBinaryRef br)
+@cname("LLVMObjectFileCopySymbolIterator");
+
+extern fn LLVMBool object_file_is_symbol_iterator_at_end(
+  LLVMBinaryRef br,
+  LLVMSymbolIteratorRef si)
+@cname("LLVMObjectFileIsSymbolIteratorAtEnd");
+
+extern fn void dispose_section_iterator(
+  LLVMSectionIteratorRef si)
+@cname("LLVMDisposeSectionIterator");
+
+extern fn void move_to_next_section(
+  LLVMSectionIteratorRef si)
+@cname("LLVMMoveToNextSection");
+
+extern fn void move_to_containing_section(
+  LLVMSectionIteratorRef sect,
+  LLVMSymbolIteratorRef sym)
+@cname("LLVMMoveToContainingSection");
+
+extern fn void dispose_symbol_iterator(
+  LLVMSymbolIteratorRef si)
+@cname("LLVMDisposeSymbolIterator");
+
+extern fn void move_to_next_symbol(
+  LLVMSymbolIteratorRef si)
+@cname("LLVMMoveToNextSymbol");
+
+extern fn CChar* get_section_name(
+  LLVMSectionIteratorRef si)
+@cname("LLVMGetSectionName");
+
+extern fn ulong get_section_size(
+  LLVMSectionIteratorRef si)
+@cname("LLVMGetSectionSize");
+
+extern fn CChar* get_section_contents(
+  LLVMSectionIteratorRef si)
+@cname("LLVMGetSectionContents");
+
+extern fn ulong get_section_address(
+  LLVMSectionIteratorRef si)
+@cname("LLVMGetSectionAddress");
+
+extern fn LLVMBool get_section_contains_symbol(
+  LLVMSectionIteratorRef si,
+  LLVMSymbolIteratorRef sym)
+@cname("LLVMGetSectionContainsSymbol");
+
+extern fn LLVMRelocationIteratorRef get_relocations(
+  LLVMSectionIteratorRef section)
+@cname("LLVMGetRelocations");
+
+extern fn void dispose_relocation_iterator(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMDisposeRelocationIterator");
+
+extern fn LLVMBool is_relocation_iterator_at_end(
+  LLVMSectionIteratorRef section,
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMIsRelocationIteratorAtEnd");
+
+extern fn void move_to_next_relocation(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMMoveToNextRelocation");
+
+extern fn CChar* get_symbol_name(
+  LLVMSymbolIteratorRef si)
+@cname("LLVMGetSymbolName");
+
+extern fn ulong get_symbol_address(
+  LLVMSymbolIteratorRef si)
+@cname("LLVMGetSymbolAddress");
+
+extern fn ulong get_symbol_size(
+  LLVMSymbolIteratorRef si)
+@cname("LLVMGetSymbolSize");
+
+extern fn ulong get_relocation_offset(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMGetRelocationOffset");
+
+extern fn LLVMSymbolIteratorRef get_relocation_symbol(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMGetRelocationSymbol");
+
+extern fn ulong get_relocation_type(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMGetRelocationType");
+
+extern fn CChar* get_relocation_type_name(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMGetRelocationTypeName");
+
+extern fn CChar* get_relocation_value_string(
+  LLVMRelocationIteratorRef ri)
+@cname("LLVMGetRelocationValueString");
+
+alias LLVMObjectFileRef = void*;
+
+extern fn LLVMObjectFileRef create_object_file(
+  LLVMMemoryBufferRef mem_buf)
+@cname("LLVMCreateObjectFile");
+
+extern fn void dispose_object_file(
+  LLVMObjectFileRef object_file)
+@cname("LLVMDisposeObjectFile");
+
+extern fn LLVMSectionIteratorRef get_sections(
+  LLVMObjectFileRef object_file)
+@cname("LLVMGetSections");
+
+extern fn LLVMBool is_section_iterator_at_end(
+  LLVMObjectFileRef object_file,
+  LLVMSectionIteratorRef si)
+@cname("LLVMIsSectionIteratorAtEnd");
+
+extern fn LLVMSymbolIteratorRef get_symbols(
+  LLVMObjectFileRef object_file)
+@cname("LLVMGetSymbols");
+
+extern fn LLVMBool is_symbol_iterator_at_end(
+  LLVMObjectFileRef object_file,
+  LLVMSymbolIteratorRef si)
+@cname("LLVMIsSymbolIteratorAtEnd");
+
+alias LLVMMemoryManagerCreateContextCallback = fn void*(
+  void* ctx_ctx);
+
+alias LLVMMemoryManagerNotifyTerminatingCallback = fn void(
+  void* ctx_ctx);
+
+extern fn LLVMErrorRef orc_create_object_linking_layer_with_in_process_memory_manager(
+  LLVMOrcObjectLayerRef* result,
+  LLVMOrcExecutionSessionRef es)
+@cname("LLVMOrcCreateObjectLinkingLayerWithInProcessMemoryManager");
+
+extern fn LLVMOrcObjectLayerRef orc_create_rt_dyld_object_linking_layer_with_section_memory_manager(
+  LLVMOrcExecutionSessionRef es)
+@cname("LLVMOrcCreateRTDyldObjectLinkingLayerWithSectionMemoryManager");
+
+extern fn LLVMOrcObjectLayerRef orc_create_rt_dyld_object_linking_layer_with_section_memory_manager_reserve_alloc(
+  LLVMOrcExecutionSessionRef es,
+  LLVMBool reserve_alloc)
+@cname("LLVMOrcCreateRTDyldObjectLinkingLayerWithSectionMemoryManagerReserveAlloc");
+
+extern fn LLVMOrcObjectLayerRef orc_create_rt_dyld_object_linking_layer_with_mcjit_memory_manager_like_callbacks(
+  LLVMOrcExecutionSessionRef es,
+  void* create_context_ctx,
+  LLVMMemoryManagerCreateContextCallback create_context,
+  LLVMMemoryManagerNotifyTerminatingCallback notify_terminating,
+  LLVMMemoryManagerAllocateCodeSectionCallback allocate_code_section,
+  LLVMMemoryManagerAllocateDataSectionCallback allocate_data_section,
+  LLVMMemoryManagerFinalizeMemoryCallback finalize_memory,
+  LLVMMemoryManagerDestroyCallback destroy)
+@cname("LLVMOrcCreateRTDyldObjectLinkingLayerWithMCJITMemoryManagerLikeCallbacks");
+
+extern fn void orc_rt_dyld_object_linking_layer_register_jit_event_listener(
+  LLVMOrcObjectLayerRef rt_dyld_obj_linking_layer,
+  LLVMJITEventListenerRef listener)
+@cname("LLVMOrcRTDyldObjectLinkingLayerRegisterJITEventListener");
+
+constdef LLVMRemarkType : CUInt {
+  REMARK_TYPE_UNKNOWN = 0,
+  REMARK_TYPE_PASSED = 1,
+  REMARK_TYPE_MISSED = 2,
+  REMARK_TYPE_ANALYSIS = 3,
+  REMARK_TYPE_ANALYSIS_FP_COMMUTE = 4,
+  REMARK_TYPE_ANALYSIS_ALIASING = 5,
+  REMARK_TYPE_FAILURE = 6
+}
+
+alias LLVMRemarkStringRef = void*;
+
+extern fn CChar* remark_string_get_data(
+  LLVMRemarkStringRef string)
+@cname("LLVMRemarkStringGetData");
+
+extern fn uint remark_string_get_len(
+  LLVMRemarkStringRef string)
+@cname("LLVMRemarkStringGetLen");
+
+alias LLVMRemarkDebugLocRef = void*;
+
+extern fn LLVMRemarkStringRef remark_debug_loc_get_source_file_path(
+  LLVMRemarkDebugLocRef dl)
+@cname("LLVMRemarkDebugLocGetSourceFilePath");
+
+extern fn uint remark_debug_loc_get_source_line(
+  LLVMRemarkDebugLocRef dl)
+@cname("LLVMRemarkDebugLocGetSourceLine");
+
+extern fn uint remark_debug_loc_get_source_column(
+  LLVMRemarkDebugLocRef dl)
+@cname("LLVMRemarkDebugLocGetSourceColumn");
+
+alias LLVMRemarkArgRef = void*;
+
+extern fn LLVMRemarkStringRef remark_arg_get_key(
+  LLVMRemarkArgRef arg)
+@cname("LLVMRemarkArgGetKey");
+
+extern fn LLVMRemarkStringRef remark_arg_get_value(
+  LLVMRemarkArgRef arg)
+@cname("LLVMRemarkArgGetValue");
+
+extern fn LLVMRemarkDebugLocRef remark_arg_get_debug_loc(
+  LLVMRemarkArgRef arg)
+@cname("LLVMRemarkArgGetDebugLoc");
+
+alias LLVMRemarkEntryRef = void*;
+
+extern fn void remark_entry_dispose(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryDispose");
+
+extern fn LLVMRemarkType remark_entry_get_type(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetType");
+
+extern fn LLVMRemarkStringRef remark_entry_get_pass_name(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetPassName");
+
+extern fn LLVMRemarkStringRef remark_entry_get_remark_name(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetRemarkName");
+
+extern fn LLVMRemarkStringRef remark_entry_get_function_name(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetFunctionName");
+
+extern fn LLVMRemarkDebugLocRef remark_entry_get_debug_loc(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetDebugLoc");
+
+extern fn ulong remark_entry_get_hotness(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetHotness");
+
+extern fn uint remark_entry_get_num_args(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetNumArgs");
+
+extern fn LLVMRemarkArgRef remark_entry_get_first_arg(
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetFirstArg");
+
+extern fn LLVMRemarkArgRef remark_entry_get_next_arg(
+  LLVMRemarkArgRef it,
+  LLVMRemarkEntryRef remark)
+@cname("LLVMRemarkEntryGetNextArg");
+
+alias LLVMRemarkParserRef = void*;
+
+extern fn LLVMRemarkParserRef remark_parser_create_yaml(
+  void* buf,
+  ulong size)
+@cname("LLVMRemarkParserCreateYAML");
+
+extern fn LLVMRemarkParserRef remark_parser_create_bitstream(
+  void* buf,
+  ulong size)
+@cname("LLVMRemarkParserCreateBitstream");
+
+extern fn LLVMRemarkEntryRef remark_parser_get_next(
+  LLVMRemarkParserRef parser)
+@cname("LLVMRemarkParserGetNext");
+
+extern fn LLVMBool remark_parser_has_error(
+  LLVMRemarkParserRef parser)
+@cname("LLVMRemarkParserHasError");
+
+extern fn CChar* remark_parser_get_error_message(
+  LLVMRemarkParserRef parser)
+@cname("LLVMRemarkParserGetErrorMessage");
+
+extern fn void remark_parser_dispose(
+  LLVMRemarkParserRef parser)
+@cname("LLVMRemarkParserDispose");
+
+extern fn uint remark_version()
+@cname("LLVMRemarkVersion");
+
+extern fn LLVMBool load_library_permanently(
+  CChar* filename)
+@cname("LLVMLoadLibraryPermanently");
+
+extern fn void parse_command_line_options(
+  CInt argc,
+  CChar** argv,
+  CChar* overview)
+@cname("LLVMParseCommandLineOptions");
+
+extern fn void* search_for_address_of_symbol(
+  CChar* symbol_name)
+@cname("LLVMSearchForAddressOfSymbol");
+
+extern fn void add_symbol(
+  CChar* symbol_name,
+  void* symbol_value)
+@cname("LLVMAddSymbol");
+
+alias LLVMPassBuilderOptionsRef = void*;
+
+extern fn LLVMErrorRef run_passes(
+  LLVMModuleRef m,
+  CChar* passes,
+  LLVMTargetMachineRef tm,
+  LLVMPassBuilderOptionsRef options)
+@cname("LLVMRunPasses");
+
+extern fn LLVMErrorRef run_passes_on_function(
+  LLVMValueRef f,
+  CChar* passes,
+  LLVMTargetMachineRef tm,
+  LLVMPassBuilderOptionsRef options)
+@cname("LLVMRunPassesOnFunction");
+
+extern fn LLVMPassBuilderOptionsRef create_pass_builder_options()
+@cname("LLVMCreatePassBuilderOptions");
+
+extern fn void pass_builder_options_set_verify_each(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool verify_each)
+@cname("LLVMPassBuilderOptionsSetVerifyEach");
+
+extern fn void pass_builder_options_set_debug_logging(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool debug_logging)
+@cname("LLVMPassBuilderOptionsSetDebugLogging");
+
+extern fn void pass_builder_options_set_aa_pipeline(
+  LLVMPassBuilderOptionsRef options,
+  CChar* aa_pipeline)
+@cname("LLVMPassBuilderOptionsSetAAPipeline");
+
+extern fn void pass_builder_options_set_loop_interleaving(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool loop_interleaving)
+@cname("LLVMPassBuilderOptionsSetLoopInterleaving");
+
+extern fn void pass_builder_options_set_loop_vectorization(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool loop_vectorization)
+@cname("LLVMPassBuilderOptionsSetLoopVectorization");
+
+extern fn void pass_builder_options_set_slp_vectorization(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool slp_vectorization)
+@cname("LLVMPassBuilderOptionsSetSLPVectorization");
+
+extern fn void pass_builder_options_set_loop_unrolling(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool loop_unrolling)
+@cname("LLVMPassBuilderOptionsSetLoopUnrolling");
+
+extern fn void pass_builder_options_set_forget_all_scev_in_loop_unroll(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool forget_all_scev_in_loop_unroll)
+@cname("LLVMPassBuilderOptionsSetForgetAllSCEVInLoopUnroll");
+
+extern fn void pass_builder_options_set_licm_mssa_opt_cap(
+  LLVMPassBuilderOptionsRef options,
+  CUInt licm_mssa_opt_cap)
+@cname("LLVMPassBuilderOptionsSetLicmMssaOptCap");
+
+extern fn void pass_builder_options_set_licm_mssa_no_acc_for_promotion_cap(
+  LLVMPassBuilderOptionsRef options,
+  CUInt licm_mssa_no_acc_for_promotion_cap)
+@cname("LLVMPassBuilderOptionsSetLicmMssaNoAccForPromotionCap");
+
+extern fn void pass_builder_options_set_call_graph_profile(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool call_graph_profile)
+@cname("LLVMPassBuilderOptionsSetCallGraphProfile");
+
+extern fn void pass_builder_options_set_merge_functions(
+  LLVMPassBuilderOptionsRef options,
+  LLVMBool merge_functions)
+@cname("LLVMPassBuilderOptionsSetMergeFunctions");
+
+extern fn void pass_builder_options_set_inliner_threshold(
+  LLVMPassBuilderOptionsRef options,
+  CInt threshold)
+@cname("LLVMPassBuilderOptionsSetInlinerThreshold");
+
+extern fn void dispose_pass_builder_options(
+  LLVMPassBuilderOptionsRef options)
+@cname("LLVMDisposePassBuilderOptions");

@@ -1,0 +1,290 @@
+module slate::parser;
+
+import slate::core;
+import slate::lexer;
+
+import std::collections;
+
+<*
+ @require ctx.current.kind == MODULE
+*>
+fn Node* parse_module_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_module_decl");
+
+	advance(ctx);
+
+	ModuleDecl* node = ctx.ast.alloc_node(ModuleDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+	node.path = parse_path(ctx);
+
+	if (!node.path)
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected a valid path");
+		node.flags.has_error = true;
+		return (Node*)node;
+	}
+
+	if (ctx.is(LESS))
+	{
+		//node.generics = parse_generic_decl(scope);
+	}
+
+	expect(ctx, node, EOS);
+
+	PathAtom* path = node.path.as(PathAtom);
+	String mod_name = path.path.text;
+
+	return (Node*)node;
+}
+
+<*
+ @require ctx.current.kind == LBRACKET
+*>
+fn NodeArray parse_attributes(ParseContext* ctx) => @pool()
+{
+    diagnostics::log_debug("parse_attributes");
+
+    List{Node*} attrs;
+    attrs.tinit();
+
+    // Outer loop: consumes consecutive bracket blocks like [a, b] [c]
+    while (ctx.is(LBRACKET))
+    {
+        Range start = ctx.current.range;
+        advance(ctx); // consume '['
+
+        // Inner loop: parses comma-separated attributes inside a single [...]
+        while (!ctx.eof() && !ctx.is(RBRACKET))
+        {
+            AttributeDecl* node = ctx.ast.alloc_node(AttributeDecl, start);
+
+            AttributeKind attr_kind;
+            switch OUTER: (ctx.current.kind)
+            {
+            	case IDENT:
+		            switch (ctx.current.value)
+					{
+					    case "private":    attr_kind = PRIVATE; break OUTER;
+					    case "nodiscard":  attr_kind = NODISCARD; break OUTER;
+					    case "deprecated": attr_kind = DEPRECATED; break OUTER;
+					    default:
+							attr_kind = CUSTOM;
+							break OUTER;
+					}
+				case IF: attr_kind = IF; break;
+				default:
+					diagnostics::error(ctx.context, ctx.current.range, "Expected attribute name");
+					skip_until(ctx, { COMMA, RBRACKET }, true);
+					continue;
+            }
+
+            node.attr_kind = attr_kind;
+
+            node.name = ctx.ident(ctx.current);
+            advance(ctx);
+
+            if (ctx.is(LPAREN))
+            {
+                advance(ctx); // consume '('
+                if (!ctx.is(RPAREN))
+                {
+                    node.expr = parse_expr(ctx);
+                }
+                expect(ctx, node, RPAREN);
+            }
+
+            node.range.end = ctx.peek(-1).range.end;
+            attrs.push(node);
+
+            // If there's a comma, consume it and parse the next attribute in this block
+            if (!consume(ctx, COMMA)) break;
+        }
+
+        if (!consume(ctx, RBRACKET))
+        {
+       		diagnostics::error(ctx.context, ctx.current.range, "Expected ']' to close attributes");
+         	break;
+        }
+    }
+
+    return alloc::clone_slice(ctx.allocator, attrs.array_view());
+}
+
+fn Node* parse_global_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_global_decl");
+	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	if (ctx.is(VAR))
+	{
+
+	}
+
+	node.type = parse_expr(ctx);
+
+	Token ident = expect(ctx, node, IDENT);
+	node.name = ctx.ident(ident);
+
+	expect(ctx, node, EOS);
+
+	return node;
+}
+
+fn Node* parse_local_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_global_decl");
+	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	node.var_kind = VarDeclKind.VAR_LOCAL;
+
+	if (!consume(ctx, VAR))
+	{
+		node.type = parse_type(ctx);
+	}
+
+	node.name = parse_ident(ctx);
+	if (!node.name)
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected local variable name");
+		skip_until(ctx, { EOS }, true);
+		return ctx.ast.error(start);
+	}
+
+	if (consume(ctx, TokenKind.EQ))
+    {
+        advance(ctx);
+        node.init_expr = parse_expr(ctx);
+    }
+
+	expect(ctx, node, EOS);
+
+	return node;
+}
+
+<*
+ @require ctx.current.kind == FN
+*>
+fn Node* parse_fn_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_global_decl");
+	FnDecl* node = ctx.ast.alloc_node(FnDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	advance(ctx);
+
+	node.name = parse_ident(ctx);
+
+	if (ctx.is(LESS))
+	{
+		node.generics = parse_generics_list(ctx);
+	}
+
+	expect(ctx, node, LPAREN);
+	expect(ctx, node, RPAREN);
+
+	if (ctx.is(ARROW))
+	{
+		expect(ctx, node, ARROW);
+		node.ret_type = parse_type(ctx);
+	}
+
+	if (ctx.is(LBRACE))
+	{
+		node.body = parse_stmt(ctx);
+	}
+	else
+	{
+		expect(ctx, node, EOS);
+	}
+
+	return node;
+}
+
+<*
+ @require ctx.current.kind == STRUCT
+*>
+fn Node* parse_struct_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_global_decl");
+	StructDecl* node = ctx.ast.alloc_node(StructDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	advance(ctx);
+
+	if (!ctx.is(IDENT))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected a name for struct");
+		node.flags.has_error = true;
+	}
+
+	node.name = ctx.ident(ctx.current);
+	consume(ctx, IDENT);
+
+	// has generic? <T>
+	if (ctx.is(LESS))
+	{
+
+	}
+
+	expect(ctx, node, LBRACE);
+
+	List{Node*} fields;
+	fields.tinit();
+
+	while (!ctx.is(RBRACE) && !ctx.is(EOF))
+	{
+		VarDecl* field = ctx.ast.alloc_node(VarDecl, start);
+		defer field.range.end = ctx.peek(-1).range.end;
+
+		field.var_kind = VarDeclKind.VAR_FIELD;
+
+		field.type = parse_type(ctx);
+
+		if (!ctx.is(IDENT))
+		{
+			diagnostics::error(ctx.context, ctx.current.range, "Expected field name");
+			field.flags.has_error = true;
+		}
+
+		field.name = ctx.ident(ctx.current);
+		advance(ctx);
+
+		expect(ctx, field, EOS);
+
+		fields.push(field);
+	}
+
+	expect(ctx, node, RBRACE);
+
+	node.fields = alloc::clone_slice(ctx.allocator, fields.array_view());
+
+	return node;
+}
+
+fn Node* parse_typedef_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_global_decl");
+	TypedefDecl* node = ctx.ast.alloc_node(TypedefDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	advance(ctx);
+
+	node.name = parse_ident(ctx);
+
+	expect(ctx, node, EQ);
+
+	node.base_type = parse_type(ctx);
+
+	expect(ctx, node, EOS);
+
+	return node;
+}
