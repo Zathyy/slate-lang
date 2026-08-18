@@ -32,6 +32,7 @@ struct TypeExpr
 {
 	inline Node node;
 	TypeExprKind type_kind;
+	bool is_const;
 
 	union
 	{
@@ -89,9 +90,20 @@ struct ExprList
 	NodeArray exprs;
 }
 
+enum LiteralKind
+{
+    INT,      // "42", "0x1F", "0b1010"
+    FLOAT,    // "3.14", "1e-10"
+    STRING,   // "\"hello\n\""
+    CHAR,     // "'a'", "'\n'"
+    BOOL,     // "true", "false"
+    NULL,     // "null"
+}
+
 struct LiteralExpr
 {
 	inline Node node;
+	LiteralKind lit_kind;
 	String value;
 }
 

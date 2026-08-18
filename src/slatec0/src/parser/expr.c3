@@ -15,6 +15,7 @@ fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
 
 	TypeExpr* current_type = ctx.ast.alloc_node(TypeExpr, start);
 	defer current_type.range.end = ctx.peek(-1).range.end;
+	current_type.is_const = consume(ctx, CONST);
 
 	// Check for built-in primitive keywords
 	if (ctx.current.kind.is_primitive())
@@ -114,4 +115,32 @@ fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
 	}
 
 	return current_type;
+}
+
+fn Node* parse_literal_expr(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+
+	diagnostics::log_debug("parse_literal_expr");
+
+	LiteralExpr* node = ctx.ast.alloc_node(LiteralExpr, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	LiteralKind kind;
+	switch (ctx.current.kind)
+	{
+		case NULL: kind = NULL;
+		case TRUE: kind = BOOL;
+		case FALSE: kind = BOOL;
+		case INT_LITERAL: kind = INT;
+		case FLOAT_LITERAL: kind = FLOAT;
+ 		case BYTES_LITERAL: kind = CHAR;
+ 		default: unreachable("Unknown literal kind");
+	}
+
+	node.lit_kind = kind;
+	node.value = ctx.current.value.copy(ctx.allocator);
+	advance(ctx);
+
+	return node;
 }

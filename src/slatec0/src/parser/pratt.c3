@@ -200,6 +200,15 @@ fn Node* parse_prefix_expr(ParseContext* ctx)
 	        id.ident = ctx.ident(t);
 	        return (Node*)id;
 	    }
+		case STRING_LITERAL:
+		case CHAR_LITERAL:
+		case TRUE:
+		case FALSE:
+		case NULL:
+		case FLOAT_LITERAL:
+		case INT_LITERAL:
+		case BYTES_LITERAL:
+			return parse_literal_expr(ctx);
 		default:
 			diagnostics::error(ctx.context, ctx.current.range, "Expected expression, got: %s", ctx.current.kind.description);
 			advance(ctx);

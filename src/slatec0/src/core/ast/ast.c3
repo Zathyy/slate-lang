@@ -15,6 +15,7 @@ bitstruct NodeFlags : ushort
 	bool is_inline;
 	bool is_static;
 	bool is_extern;
+	bool is_const;
 	bool has_attributes;
 	bool has_error;
 }

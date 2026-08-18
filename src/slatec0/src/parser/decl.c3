@@ -119,15 +119,23 @@ fn Node* parse_global_decl(ParseContext* ctx)
 	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 
+	node.flags.is_extern = consume(ctx, EXTERN);
+	node.flags.is_const = consume(ctx, CONST);
+
 	if (ctx.is(VAR))
 	{
 
 	}
 
-	node.type = parse_expr(ctx);
+	node.type = parse_type(ctx);
 
 	Token ident = expect(ctx, node, IDENT);
 	node.name = ctx.ident(ident);
+
+	if (consume(ctx, EQ))
+	{
+		node.init_expr = parse_expr(ctx);
+	}
 
 	expect(ctx, node, EOS);
 
@@ -167,15 +175,17 @@ fn Node* parse_local_decl(ParseContext* ctx)
 	return node;
 }
 
-<*
- @require ctx.current.kind == FN
-*>
 fn Node* parse_fn_decl(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
 	diagnostics::log_debug("parse_global_decl");
 	FnDecl* node = ctx.ast.alloc_node(FnDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
+
+	if (consume(ctx, EXTERN))
+	{
+		node.flags.is_extern = true;
+	}
 
 	advance(ctx);
 

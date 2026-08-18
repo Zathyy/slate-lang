@@ -234,6 +234,15 @@ fn Node* parse_top_level_statement(ParseContext* ctx)
 		//	node = parse_enum_constdef_decl(ctx);
 		case CONST:
 			node = parse_global_decl(ctx);
+		case EXTERN:
+			if (ctx.peek(1).kind == FN)
+			{
+				node = parse_fn_decl(ctx);
+			}
+			else
+			{
+				node = parse_global_decl(ctx);
+			}
 		default:
 			break;
 	}
