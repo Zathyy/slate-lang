@@ -119,6 +119,8 @@ fn Node* parse_global_decl(ParseContext* ctx)
 	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 
+	node.var_kind = VarDeclKind.VAR_GLOBAL;
+
 	node.flags.is_extern = consume(ctx, EXTERN);
 	node.flags.is_const = consume(ctx, CONST);
 
@@ -275,6 +277,78 @@ fn Node* parse_struct_decl(ParseContext* ctx)
 	expect(ctx, node, RBRACE);
 
 	node.fields = alloc::clone_slice(ctx.allocator, fields.array_view());
+
+	return node;
+}
+
+<*
+ @require ctx.current.kind == ENUM
+*>
+fn Node* parse_enum_decl(ParseContext* ctx) => @pool()
+{
+	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_enum_decl");
+	EnumDecl* node = ctx.ast.alloc_node(EnumDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	advance(ctx);
+
+	if (!ctx.is(IDENT))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected a name for struct");
+		node.flags.has_error = true;
+	}
+
+	node.name = parse_ident(ctx);
+
+	if (consume(ctx, COLON))
+	{
+		node.backing_type = parse_type_expr(ctx);
+	}
+
+	if (!consume(ctx, LBRACE))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected '{'");
+		node.flags.has_error = true;
+		return (Node*)node;
+	}
+
+	List{Node*} variants;
+	variants.init(tmem, 4);
+	while ENUM_VARIANT: (!ctx.is(RBRACE) && !ctx.eof())
+	{
+		if (!ctx.is(IDENT))
+		{
+			diagnostics::error(ctx.context, ctx.current.range, "Expected enum variant");
+			skip_until(ctx, { COMMA, RBRACE });
+			consume(ctx, COMMA); // Try to jump to next
+			continue;
+		}
+
+		VarDecl* variant = ctx.ast.alloc_node(VarDecl, ctx.current.range);
+		variant.var_kind = VAR_GLOBAL;
+		variant.flags.is_const = true;
+		variant.name = ctx.ident(ctx.current);
+		advance(ctx);
+
+		// Optional ordinal: "=" expr
+		if (consume(ctx, EQ))
+		{
+			variant.init_expr = parse_expr(ctx);
+		}
+
+		variants.push(variant);
+
+		if (!consume(ctx, COMMA)) break;
+	}
+
+	if (!consume(ctx, RBRACE))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected '}'");
+		node.flags.has_error = true;
+	}
+
+	node.variants = alloc::clone_slice(ctx.allocator, variants.array_view());
 
 	return node;
 }

@@ -106,6 +106,16 @@ struct TypeInfo
 	String mod;
 	Node* node;
 	Type* resolved;
+	ResolveStatus status;
+}
+
+struct VarInfo
+{
+	VarInfo* next;
+	String name;
+	String mod;
+	Node* node;
+	ResolveStatus status;
 }
 
 struct FunctionInfo
@@ -113,6 +123,7 @@ struct FunctionInfo
 	FunctionInfo* next;
 	String mod;
 	Node* node;
+	ResolveStatus status;
 }
 
 struct VariableInfo
@@ -120,6 +131,7 @@ struct VariableInfo
 	String name;
 	String mod;
 	Node* node;
+	ResolveStatus status;
 }
 
 struct ImportInfo
@@ -131,6 +143,7 @@ struct ImportInfo
 struct Registry
 {
 	HashMap{String, TypeInfo*} types;
+	HashMap{String, VarInfo*} globals;
 	HashMap{String, FunctionInfo*} functions;
 }
 
@@ -161,4 +174,28 @@ struct TargetLayout
 {
     AlignData[BitSizes::len] integers;
     AlignData[BitSizes::len] floats;
+}
+
+enum ComptimeKind
+{
+    BOOL,
+    INT,
+    STRING,
+    ENUM,
+}
+
+struct ComptimeValue
+{
+    ComptimeKind kind;
+    union
+    {
+        bool bool_val;
+        long int_val;
+        String str_val;
+        struct enum_val
+        {
+            Type* type;
+            uint variant_id;
+        }
+    }
 }

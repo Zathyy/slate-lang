@@ -120,6 +120,12 @@ struct CondExpr
 	NodeArray exprs;
 }
 
+struct BuiltinExpr
+{
+	inline Node node;
+	Ident* value;
+}
+
 <*
 
 *>

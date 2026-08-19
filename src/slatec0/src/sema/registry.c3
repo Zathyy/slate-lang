@@ -11,6 +11,7 @@ fn Registry* create(Allocator alloc)
 	Registry* registry = alloc::new(alloc, Registry);
 
 	registry.functions.init(alloc);
+	registry.globals.init(alloc);
 	registry.types.init(alloc);
 
 	return registry;
@@ -59,6 +60,9 @@ fn void register_and_dispatch(CompilerContext* context, Module* mod, Node* node)
 		case FN_DECL:
 			register_function(context, mod, node);
 			break;
+		case VAR_DECL:
+			assert(node.as(VarDecl).var_kind == VarDeclKind.VAR_GLOBAL);
+			register_global(context, mod, node);
 		default:
 			break;
 	}
@@ -67,27 +71,27 @@ fn void register_and_dispatch(CompilerContext* context, Module* mod, Node* node)
 fn void register_type(CompilerContext* context, Module* mod, Node* node)
 {
 	Ident* name;
+	LLVMTypeRef llvm_type = null;
+
 	switch (node.kind)
 	{
 		case STRUCT_DECL:
 		{
 			StructDecl* decl = node.as(StructDecl);
 			name = decl.name;
+			llvm_type = llvm::struct_create_named(llvm::get_global_context(), (CChar*)name.text.ptr);
 		}
 		case ENUM_DECL:
 		{
 			EnumDecl* decl = node.as(EnumDecl);
 			name = decl.name;
+			llvm_type = llvm::int_32_type_in_context(llvm::get_global_context());
 		}
 		case TYPEDEF_DECL:
 		{
 			TypedefDecl* decl = node.as(TypedefDecl);
 			name = decl.name;
-		}
-		case VAR_DECL:
-		{
-			VarDecl* decl = node.as(VarDecl);
-			name = decl.name;
+			llvm_type = null;
 		}
 		default:
 			return;
@@ -111,7 +115,36 @@ fn void register_type(CompilerContext* context, Module* mod, Node* node)
 	diagnostics::log_debug("[Registry]: registered type: %s", qname);
 
 	context.registry.types.set(qname, type_info);
-	lookup::register_type(context.lookup, context.alloc, qname, node, llvm::struct_create_named(llvm::get_global_context(), (CChar*)name.text.ptr));
+	if (llvm_type != null)
+    {
+        lookup::register_type(context.lookup, context.alloc, qname, node, llvm_type);
+    }
+}
+
+<*
+ The underlying type will be resolved later, since it depends on everything else being registered
+*>
+fn void register_global(CompilerContext* context, Module* mod, Node* node)
+{
+    VarDecl* decl = node.as(VarDecl);
+    if (!decl.name)
+    {
+        diagnostics::log_error("registry::register_global - var name is null");
+        return;
+    }
+
+    String qname = string::format(context.alloc, "%s::%s", mod.name, decl.name.text);
+
+    VarInfo* var_info = alloc::new(context.alloc, VarInfo);
+    var_info.mod = mod.name;
+    var_info.node = node;
+
+    VarInfo* existing_head = context.registry.globals.get(qname) ?? null;
+    var_info.next = existing_head;
+
+    diagnostics::log_debug("[Registry]: registered global var symbol: %s", qname);
+
+    context.registry.globals.set(qname, var_info);
 }
 
 fn void register_function(CompilerContext* context, Module* mod, Node* node)

@@ -628,6 +628,11 @@ fn Token next(Lexer* lexer)
 				return lexer.emit(MOD_ASSIGN, "%=");
 			}
 			return lexer.emit(MOD, "%");
+		case '$':
+			if (lexer.peek() == '$')
+			{
+				return lexer.emit(BUILTIN, "$$");
+			}
 		case '^':
 			if (lexer.peek() == '=')
 			{

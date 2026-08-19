@@ -200,6 +200,21 @@ fn Node* parse_prefix_expr(ParseContext* ctx)
 	        id.ident = ctx.ident(t);
 	        return (Node*)id;
 	    }
+		case BUILTIN:
+		{
+			advance(ctx);
+			if (ctx.current.kind != IDENT)
+			{
+				diagnostics::error(ctx.context, ctx.peek(1).range, "'$$' must be followed by a 'ident'");
+				ctx.error_count++;
+				advance(ctx);
+				return null;
+			}
+
+			BuiltinExpr* builtin = ctx.ast.alloc_node(BuiltinExpr, { t.range.start, ctx.current.range.end });
+			builtin.value = parse_ident(ctx);
+			return builtin;
+		}
 		case STRING_LITERAL:
 		case CHAR_LITERAL:
 		case TRUE:

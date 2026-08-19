@@ -254,8 +254,8 @@ fn Node* parse_top_level_statement(ParseContext* ctx)
 			node = parse_typedef_decl(ctx);
 		case STRUCT:
 			node = parse_struct_decl(ctx);
-		//case ENUM:
-		//	node = parse_enum_constdef_decl(ctx);
+		case ENUM:
+			node = parse_enum_decl(ctx);
 		case CONST:
 			node = parse_global_decl(ctx);
 		case EXTERN:

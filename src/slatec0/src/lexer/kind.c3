@@ -177,8 +177,12 @@ enum TokenKind : char
 
 	<* 123 *>
 	INT_LITERAL,
+
 	<*  *>
 	FLOAT_LITERAL,
+
+	<* $$ident *>
+	BUILTIN,
 
 	<* foo *>
 	IDENT,
