@@ -201,6 +201,28 @@ fn bool parse(ParseContext* ctx, SourceFile* source_file) => @pool()
 	return ctx.error_count == 0;
 }
 
+fn void attach_attributes(ParseContext* ctx, Node* node, NodeArray attr)
+{
+	if (!attr) return;
+
+	switch (node.kind)
+	{
+		case STRUCT_DECL:
+			node.as(StructDecl).attributes = attr;
+			break;
+		case MODULE_DECL:
+			node.as(ModuleDecl).attributes = attr;
+			break;
+		case IMPORT_DECL:
+			node.as(ImportDecl).attributes = attr;
+			break;
+		case ENUM_DECL:
+			node.as(EnumDecl).attributes = attr;
+			break;
+		default:
+	}
+}
+
 fn Node* parse_top_level_statement(ParseContext* ctx)
 {
 	diagnostics::log_debug("parse_top_level_statement: %s", ctx.current.value);
@@ -215,7 +237,9 @@ fn Node* parse_top_level_statement(ParseContext* ctx)
 
 	if (ctx.current.kind.is_primitive())
 	{
-		return parse_global_decl(ctx);
+		node = parse_global_decl(ctx);
+		attach_attributes(ctx, node, attrs);
+		return node;
 	}
 
 	switch (ctx.current.kind)
@@ -246,6 +270,8 @@ fn Node* parse_top_level_statement(ParseContext* ctx)
 		default:
 			break;
 	}
+
+	attach_attributes(ctx, node, attrs);
 
 	return node;
 }

@@ -11,12 +11,14 @@ struct ModuleDecl
 {
 	inline Node node;
 	Node* path;
+	NodeArray attributes;
 }
 
 struct ImportDecl
 {
 	inline Node node;
 	NodeArray paths;
+	NodeArray attributes;
 }
 
 struct AttributeDecl
@@ -56,6 +58,7 @@ struct TypedefDecl
 	Ident* name;
 	Node* base_type;
 	Node* generics;
+	NodeArray attributes;
 	bool is_inline;
 }
 
@@ -67,6 +70,7 @@ struct FnDecl
 	Node* body;
 	NodeArray generics;
 	NodeArray params;
+	NodeArray attributes;
 }
 
 <*
@@ -83,6 +87,7 @@ struct VarDecl
 	Node* type;
 	Node* init_expr;
 	Node* next;
+	NodeArray attributes;
 }
 
 struct EnumDecl
@@ -93,6 +98,7 @@ struct EnumDecl
 	Node* backing_type; // optional: ":" type
 	NodeArray assoc_params; // optional enum_param_list inside ":"
 	NodeArray variants;
+	NodeArray attributes;
 }
 
 <*
@@ -106,4 +112,5 @@ struct StructDecl
 	Node* type;
 	Node* next;
 	Ident* name;
+	NodeArray attributes;
 }

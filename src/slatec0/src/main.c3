@@ -39,7 +39,7 @@ fn void compile(CompilerContext* context)
 	sema::analyze(sema);
 }
 
-fn void process_stdlib(CompilerContext* context)
+fn void process_stdlib(CompilerContext* context) => @pool()
 {
     String exe = utils::get_executable_path();
     if (!exe)
@@ -49,8 +49,24 @@ fn void process_stdlib(CompilerContext* context)
     }
     defer exe.free(mem);
 
+    String root_dir;
 
-    Path stdlib = string::tformat("%s/lib/std", ((Path)exe).parent().parent()).to_path(context.alloc)!!;
+    Path current = (Path)exe;
+    while (true)
+    {
+     	if (path::is_dir((Path)string::tformat("%s/lib", current)))
+		{
+			root_dir = current;
+			break;
+		}
+
+		Path? new_path = current.parent();
+		if (catch new_path) break;
+		current = new_path;
+    }
+
+
+    Path stdlib = string::tformat("%s/lib/std", ((Path)root_dir)).to_path(context.alloc)!!;
 
     diagnostics::log_info("stdlib path = %s", stdlib);
 

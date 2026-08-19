@@ -8,5 +8,5 @@ struct Slice
 
 fn test()
 {
-    
+
 }
