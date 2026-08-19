@@ -65,7 +65,7 @@ fn Node* parse_path(ParseContext* ctx, bool prefix = false) => @pool()
 <*
  generic_param_list ::= '<' expr ( ',' expr )* '>'
 *>
-fn NodeArray parse_generics_list(ParseContext* ctx)
+fn NodeArray parse_generics_list(ParseContext* ctx) => @pool()
 {
 	if (!consume(ctx, LESS)) return {};
 	List{Node*} params;
@@ -99,4 +99,41 @@ fn Ident* parse_ident(ParseContext* ctx)
 	advance(ctx);
 
 	return ident;
+}
+
+fn NodeArray parse_param_list(ParseContext* ctx) => @pool()
+{
+	List{Node*} params; params.init(tmem);
+
+	while (!ctx.eof() && !ctx.is(RPAREN))
+	{
+		Range param_start = ctx.current.range;
+
+		Node* param = parse_param_decl(ctx);
+		params.push(param);
+
+		if (ctx.current.range == param_start)
+		{
+			diagnostics::error(ctx.context, ctx.current.range, "Invalid parameter declaration");
+			skip_until(ctx, { COMMA, RPAREN, EOS });
+			break;
+		}
+
+		if (consume(ctx, COMMA))
+		{
+			if (ctx.is(RPAREN))
+			{
+				diagnostics::error(ctx.context, ctx.current.range, "Trailing comma in parameter list");
+				break;
+			}
+		}
+		else if (!ctx.is(RPAREN))
+		{
+			diagnostics::error(ctx.context, ctx.current.range, "Expected ',' or ')' in parameter list");
+			skip_until(ctx, { RPAREN, EOS });
+			break;
+		}
+	}
+
+	return alloc::clone_slice(ctx.allocator, params.array_view());
 }

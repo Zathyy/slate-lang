@@ -144,3 +144,17 @@ fn Node* parse_literal_expr(ParseContext* ctx)
 
 	return node;
 }
+
+fn Node* parse_binary_expr(ParseContext* ctx, Node* left, Precedence prec)
+{
+	Range start  = ctx.current.range;
+	TokenKind kind = ctx.current.kind;
+	advance(ctx);
+	Node* right = parse_expr(ctx);
+
+	BinaryExpr* node = ctx.ast.alloc_node(BinaryExpr, { start.start, right.range.end });
+	node.left = left;
+	node.right = right;
+	node.op = core::binaryop_from_token(kind);
+	return (Node*)node;
+}

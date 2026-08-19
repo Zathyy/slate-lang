@@ -126,11 +126,12 @@ fn Node* parse_global_decl(ParseContext* ctx)
 
 	if (ctx.is(VAR))
 	{
-
+		diagnostics::error(ctx.context, ctx.current.range, "Global variables cant use 'var'");
+		node.flags.has_error = true;
+		advance(ctx);
 	}
 
 	node.type = parse_type(ctx);
-
 	Token ident = expect(ctx, node, IDENT);
 	node.name = ctx.ident(ident);
 
@@ -199,6 +200,12 @@ fn Node* parse_fn_decl(ParseContext* ctx)
 	}
 
 	expect(ctx, node, LPAREN);
+
+	if (!ctx.is(RPAREN))
+	{
+		node.params = parse_param_list(ctx);
+	}
+
 	expect(ctx, node, RPAREN);
 
 	if (ctx.is(ARROW))
@@ -369,6 +376,44 @@ fn Node* parse_typedef_decl(ParseContext* ctx)
 	node.base_type = parse_type(ctx);
 
 	expect(ctx, node, EOS);
+
+	return node;
+}
+
+// TODO: Improve
+fn Node* parse_param_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+
+	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	node.var_kind = VAR_PARAM;
+
+	if (consume(ctx, ELLIPSIS))
+	{
+		node.var_flags.is_variadic = true;
+		return node;
+	}
+
+	bool is_ref = consume(ctx, AMP);
+	Node* parsed_type = null;
+	bool has_ellipsis_after_type = false;
+
+	parsed_type = parse_type_expr(ctx);
+	if (parsed_type && parsed_type.kind == ERROR)
+	{
+		node.flags.has_error = true;
+	}
+	if (consume(ctx, ELLIPSIS))
+	{
+		has_ellipsis_after_type = true;
+		node.var_flags.is_variadic = true;
+	}
+
+	node.type = parsed_type;
+
+	node.name = parse_ident(ctx);
 
 	return node;
 }

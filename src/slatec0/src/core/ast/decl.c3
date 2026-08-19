@@ -83,6 +83,7 @@ struct VarDecl
 {
 	inline Node node;
 	VarDeclKind var_kind;
+	VarDeclFlags var_flags;
 	Ident* name;
 	Node* type;
 	Node* init_expr;

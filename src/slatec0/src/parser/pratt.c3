@@ -268,19 +268,41 @@ fn Node* parse_infix(ParseContext* ctx, Node* left, Precedence rbp)
         return (Node*)bin;
     }
 
-    if (t.kind == TokenKind.SCOPE)
-    {
-        advance(ctx);
-        Node* right = parse_expr(ctx, rbp);
-
-        AccessExpr* scope = ctx.ast.alloc_node(AccessExpr, t.range);
-        scope.left = left;
-        scope.right = right;
-        return (Node*)scope;
-    }
-
 	switch (t.kind)
 	{
+		case PLUS:
+		case PLUS_ASSIGN:
+		case MINUS:
+		case MINUS_ASSIGN:
+		case ASTERISK:
+		case MULT_ASSIGN:
+		case DIV:
+		case DIV_ASSIGN:
+		case MOD:
+		case MOD_ASSIGN:
+		case EQ:
+		case EQEQ:
+		case GREATER:
+		case GREATER_EQ:
+		case LESS:
+		case LESS_EQ:
+		case AMP:
+		case BIT_AND_ASSIGN:
+		case NOT_EQUAL:
+		case RSHIFT_ASSIGN:
+		case LSHIFT_ASSIGN:
+		case QUESTQUEST:
+		case ELVIS:
+			return parse_binary_expr(ctx, left, rbp);
+		case DOT:
+		case SCOPE:
+			advance(ctx);
+	        Node* right = parse_expr(ctx, HIGHEST); // HIGHEST bp to avoid consuming downstream infix operators.
+	        AccessExpr* access = ctx.ast.alloc_node(AccessExpr, t.range);
+			access.access_kind = t.kind == SCOPE ? STATIC : INSTANCE;
+	        access.left = left;
+	        access.right = right;
+	        return access;
 		default:
 			diagnostics::error(ctx.context, ctx.current.range, "Expected expression");
 			advance(ctx);

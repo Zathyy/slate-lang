@@ -66,3 +66,18 @@ fn bool Location.eq(self, Location other) @operator(==)
 {
 	return self.line == other.line && self.column == other.column;
 }
+
+bitstruct VarDeclFlags : uint
+{
+	bool is_const;
+	bool is_local;
+	bool is_extern;
+	bool is_thread_local;
+	bool is_inline;
+	bool is_static;
+
+	// for params
+	bool is_self;
+	bool is_self_by_ref;
+	bool is_variadic;
+}
