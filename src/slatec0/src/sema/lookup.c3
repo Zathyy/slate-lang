@@ -21,16 +21,16 @@ fn Lookup* create(CompilerContext* context)
 	return lookup;
 }
 
-fn void register_type(Lookup* lookup, Allocator alloc, String name, Node* node, LLVMTypeRef llvm_type)
+fn Type* register_type(Lookup* lookup, Allocator alloc, String name, Decl* decl, TypeKind kind)
 {
 	Type* type = alloc::new(alloc, Type);
 
 	type.name = name;
-	type.data.node = node;
 	type.status = UNRESOLVED;
-	type.llvm_type = llvm_type;
+	type.data.decl = decl;
 
 	lookup.types.set(name, type);
+	return type;
 }
 
 fn void create_builtin(Lookup* lookup, String name,
@@ -53,6 +53,7 @@ fn void create_builtin(Lookup* lookup, String name,
 		case TYPE_F64:
 		case TYPE_F128:
 			align = lookup.target.layout.floats[bits.ordinal];
+			break;
 		default:
 			align = lookup.target.layout.integers[bits.ordinal];
 	}
@@ -152,4 +153,26 @@ fn bool type_eq(Type* a, Type* b)
 fn bool Type.eq(&self, Type* other) @operator(==)
 {
 	return type_eq(self, other) @inline;
+}
+
+fn Type* primitive_type(Lookup* self, TypeKind kind)
+{
+	switch (kind)
+	{
+		case TYPE_VOID: return self.types.get("void")!!;
+		case TYPE_BOOL: return self.types.get("bool")!!;
+		case TYPE_I8:   return self.types.get("i8")!!;
+		case TYPE_I16:  return self.types.get("i16")!!;
+		case TYPE_I32:  return self.types.get("i32")!!;
+		case TYPE_I64:  return self.types.get("i64")!!;
+		case TYPE_U8:   return self.types.get("u8")!!;
+		case TYPE_U16:  return self.types.get("u16")!!;
+		case TYPE_U32:  return self.types.get("u32")!!;
+		case TYPE_U64:  return self.types.get("u64")!!;
+		case TYPE_F16:  return self.types.get("f16")!!;
+		case TYPE_F32:  return self.types.get("f32")!!;
+		case TYPE_F64:  return self.types.get("f64")!!;
+		case TYPE_USIZE:return self.types.get("usize")!!;
+		default: unreachable("Not a primitive type");
+	}
 }

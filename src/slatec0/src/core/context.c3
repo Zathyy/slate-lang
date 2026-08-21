@@ -44,7 +44,6 @@ fn CompilerContext* create(Target target = {})
 	ctx.target.layout = arch::get_platform_layout(target.os, target.arch);
 
 	ctx.lookup = lookup::create(ctx);
-	ctx.registry = registry::create(ctx.alloc);
 
 	return ctx;
 }

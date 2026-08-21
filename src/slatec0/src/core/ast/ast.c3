@@ -28,10 +28,33 @@ struct Node
 	NodeID id;
 }
 
+struct Decl
+{
+	inline Node node;
+	Ident* name;
+	Type* resolved_type;
+	Visibility visibility;
+}
+
+struct Stmt
+{
+	inline Node node;
+}
+
+struct Expr
+{
+	inline Node node;
+	Type* evaluated_type;
+}
+
 <*
  @require self.kind == NodeKind.$eval(@typename_to_constname($Type::name)) : "Invalid kind to cast"
 *>
 macro Node.as(&self, $Type) => ($Type*)self;
+
+macro Node.is_decl(&self) => self.kind.is_decl();
+macro Node.is_stmt(&self) => self.kind.is_stmt();
+macro Node.is_expr(&self) => self.kind.is_expr();
 
 fn bool Node.is_valid(&self) @inline
 {

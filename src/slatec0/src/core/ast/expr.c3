@@ -6,14 +6,14 @@ import std::collections::list;
 
 struct TryExpr
 {
-    inline Node node;
+    inline Expr node;
     Node* operand; // Expression evaluating to an ErrorUnion
 }
 
 // Represents 'expr catch |err| { ... }'
 struct CatchExpr
 {
-    inline Node node;
+    inline Expr node;
     Node* operand;        // Expression evaluating to an ErrorUnion
     String err_var_name;  // Binding name for error payload (e.g., "err")
     Node* body;           // Block or expression executed on error
@@ -30,7 +30,7 @@ struct CatchExpr
 *>
 struct TypeExpr
 {
-	inline Node node;
+	inline Expr node;
 	TypeExprKind type_kind;
 	bool is_const;
 
@@ -63,7 +63,7 @@ struct TypeExpr
 
 struct BinaryExpr
 {
-	inline Node node;
+	inline Expr node;
 	Node* left;
 	Node* right;
 	OperatorKind op;
@@ -71,14 +71,14 @@ struct BinaryExpr
 
 struct IdentExpr
 {
-	inline Node node;
+	inline Expr node;
 	Ident* ident;
 	Node* path_expr;
 }
 
 struct CallExpr
 {
-	inline Node node;
+	inline Expr node;
 	bool is_outer_call;
 	Node* callee;
 	NodeArray args;
@@ -86,7 +86,7 @@ struct CallExpr
 
 struct ExprList
 {
-	inline Node node;
+	inline Expr node;
 	NodeArray exprs;
 }
 
@@ -102,27 +102,27 @@ enum LiteralKind
 
 struct LiteralExpr
 {
-	inline Node node;
+	inline Expr node;
 	LiteralKind lit_kind;
 	String value;
 }
 
 struct UnaryExpr
 {
-	inline Node node;
+	inline Expr node;
 	UnaryOpKind operator;
 	Node* expr;
 }
 
 struct CondExpr
 {
-	inline Node node;
+	inline Expr node;
 	NodeArray exprs;
 }
 
 struct BuiltinExpr
 {
-	inline Node node;
+	inline Expr node;
 	Ident* value;
 }
 
@@ -131,7 +131,7 @@ struct BuiltinExpr
 *>
 struct TernaryExpr
 {
-	inline Node node;
+	inline Expr node;
 	Node* cond;
 	Node* then_expr;
 	Node* else_expr;
@@ -141,27 +141,27 @@ struct TernaryExpr
 
 struct NamedArgExpr
 {
-	inline Node node;
+	inline Expr node;
 	Ident* name;
 	Node* value;
 }
 
 struct CastExpr
 {
-	inline Node node;
+	inline Expr node;
 	Node* operand;
 	Node* inner;
 }
 
 struct GroupExpr
 {
-	inline Node node;
+	inline Expr node;
 	Node* inner;
 }
 
 struct InitializerListExpr
 {
-	inline Node node;
+	inline Expr node;
 	NodeArray exprs;
 }
 
@@ -173,7 +173,7 @@ struct InitializerListExpr
 *>
 struct DesignatorExpr
 {
-	inline Node node;
+	inline Expr node;
 	DesignatorKind designator_kind;
 	Node* path;
 
@@ -190,14 +190,14 @@ struct DesignatorExpr
 *>
 struct DesignatedInitializerExpr
 {
-	inline Node node;
+	inline Expr node;
 	Node* path;
 	Node* value;
 }
 
 struct AccessExpr
 {
-	inline Node node;
+	inline Expr node;
 	AccessKind access_kind;
 	Node* left;
 	Node* right;
@@ -209,7 +209,7 @@ struct AccessExpr
 *>
 struct RangeExpr
 {
-	inline Node node;
+	inline Expr node;
 	RangeKind range_kind;
 	bool start_from_end;
 	bool end_from_end;

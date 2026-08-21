@@ -15,7 +15,7 @@ fn Lexer* create(CompilerContext* ctx, String buffer, bool emit_comments = false
 
 	lexer.context = ctx;
 	lexer.tokens.init(ctx.alloc);
-	lexer.buffer = buffer;
+	lexer.buffer = buffer.copy(ctx.alloc);
 	lexer.current = buffer.len > 0 ? buffer[0] : 0;
 	lexer.emit_comments = emit_comments;
 

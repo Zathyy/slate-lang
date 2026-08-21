@@ -3,7 +3,6 @@ module slate::core;
 import slate::lexer;
 import std::collections;
 import slate::sema::lookup;
-import slate::sema::registry;
 import llvm;
 
 struct CompilerContext
@@ -11,7 +10,6 @@ struct CompilerContext
 	LLVMContextRef llvm_context;
 	Allocator alloc;
 	Lookup* lookup;
-	Registry* registry;
 	HashMap{String, SourceFile*} files;
 	HashMap{String, Module*} modules;
 	SourceFile* current_source_file;
@@ -33,6 +31,11 @@ struct SourceFile
 	String path;
 	String content;
 	Ast ast;
+
+	struct sema
+	{
+		Scope* scope;
+	}
 }
 
 struct Module
@@ -83,7 +86,7 @@ struct Type
 
 	union data
 	{
-		Node* node;
+		Decl* decl;
 
 		bitstruct builtin : uint
 		{
@@ -99,62 +102,13 @@ struct Type
 	}
 }
 
-struct TypeInfo
-{
-	TypeInfo* next;
-	String name;
-	String mod;
-	Node* node;
-	Type* resolved;
-	ResolveStatus status;
-}
-
-struct VarInfo
-{
-	VarInfo* next;
-	String name;
-	String mod;
-	Node* node;
-	ResolveStatus status;
-}
-
-struct FunctionInfo
-{
-	FunctionInfo* next;
-	String mod;
-	Node* node;
-	ResolveStatus status;
-}
-
-struct VariableInfo
-{
-	String name;
-	String mod;
-	Node* node;
-	ResolveStatus status;
-}
-
-struct ImportInfo
-{
-	String path;
-	Node* node;
-}
-
-struct Registry
-{
-	HashMap{String, TypeInfo*} types;
-	HashMap{String, VarInfo*} globals;
-	HashMap{String, FunctionInfo*} functions;
-}
-
 struct Scope
 {
 	Scope* parent;
 	Range range;
 	List{Scope*} children;
-	HashMap{String, FunctionInfo*} functions;
-	HashMap{String, VariableInfo*} variables;
-	HashMap{String, TypeInfo*} types;
+	HashMap{String, Decl*} symbols;
+	List{String} imports;
 }
 
 struct Target
@@ -198,4 +152,22 @@ struct ComptimeValue
             uint variant_id;
         }
     }
+}
+
+fn bool ComptimeValue.eq(&self, ComptimeValue other) @operator(==)
+{
+	if (self.kind != other.kind) return false;
+
+	switch (self.kind)
+	{
+		case BOOL: return self.bool_val == other.bool_val;
+		case INT:  return self.int_val == other.int_val;
+		case STRING: return self.str_val == other.str_val;
+		case ENUM:
+			if (self.enum_val.type && other.enum_val.type)
+			{
+				return self.enum_val.type == other.enum_val.type;
+			}
+			return self.enum_val.variant_id == other.enum_val.variant_id;
+	}
 }

@@ -5,35 +5,42 @@ import slate::core::visitor;
 
 import std::collections::list;
 
-fn void run_variable_pass(SemaContext* ctx) => @pool()
+/*
+
+fn void variable_pass(SemaContext* ctx) => @pool()
 {
-    SourceFile* sf = ctx.context.current_source_file;
-    String[] lines = sf.content.tsplit("\n");
-
-	Range range = {
-		.start = {},
-		.end = {
-		    .line = lines.len - 1,
-			.column = lines[^1].len - 1
-		},
-	};
-
-	ctx.scope.range = range;
-
-	foreach (root_node : sf.ast.statements)
+	foreach (SourceFile* sf : ctx.context.files.value_iter())
 	{
-		if (!root_node) continue;
+		ctx.current_file = sf;
+		ctx.context.current_source_file = sf;
+	    String[] lines = sf.content.tsplit("\n");
 
-		switch (root_node.kind)
+		Range range = {
+			.start = {},
+			.end = {
+			    .line = lines.len - 1,
+				.column = lines[^1].len - 1
+			},
+		};
+
+		ctx.scope = sf.sema.scope;
+		ctx.current_file.sema.scope.range = range;
+
+		foreach (root_node : sf.ast.statements)
 		{
-			case VAR_DECL:
-			case FN_DECL:
-				break;
-			default:
-				continue;
-		}
+			if (!root_node) continue;
 
-		visitor::visit(root_node, null, { &sema_on_enter, &sema_on_exit }, ctx);
+			switch (root_node.kind)
+			{
+				case VAR_DECL:
+				case FN_DECL:
+					break;
+				default:
+					continue;
+			}
+
+			visitor::visit(root_node, null, { &sema_on_enter, &sema_on_exit }, ctx);
+		}
 	}
 }
 
@@ -43,8 +50,16 @@ fn void push_scope(SemaContext* ctx, Node* node)
 
 	Scope* new_scope = scope::create(ctx.alloc, node.range, ctx.scope);
 
-	ctx.scope.children.push(new_scope);
-	ctx.scope = new_scope;
+    if (ctx.scope)
+    {
+    	ctx.scope.children.push(new_scope);
+    }
+
+    ctx.scope = new_scope;
+    if (ctx.current_file)
+    {
+    	ctx.current_file.sema.scope = new_scope;
+    }
 }
 
 fn void pop_scope(SemaContext* ctx)
@@ -52,6 +67,10 @@ fn void pop_scope(SemaContext* ctx)
 	if (ctx.scope.parent)
 	{
 		ctx.scope = ctx.scope.parent;
+		if (ctx.current_file)
+        {
+            ctx.current_file.sema.scope = ctx.scope;
+        }
 	}
 }
 

@@ -1,5 +1,7 @@
 module std::libc;
 
+import std::testssfaasfs;
+
 extern fn __errno_location() -> i32*;
 
 extern fn printf(const u8* fmt, ...) -> i32;

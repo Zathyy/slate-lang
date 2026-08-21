@@ -246,8 +246,8 @@ fn Node* parse_top_level_statement(ParseContext* ctx)
 	{
 		case MODULE:
 			node = parse_module_decl(ctx);
-		//case IMPORT:
-		//	node = parse_import_decl(ctx);
+		case IMPORT:
+			node = parse_import_decl(ctx);
 		case FN:
 			node = parse_fn_decl(ctx);
 		case TYPEDEF:

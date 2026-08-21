@@ -9,36 +9,34 @@ import std::collections::list;
 *>
 struct ModuleDecl
 {
-	inline Node node;
+	inline Decl node;
 	Node* path;
 	NodeArray attributes;
 }
 
 struct ImportDecl
 {
-	inline Node node;
+	inline Decl node;
 	NodeArray paths;
 	NodeArray attributes;
 }
 
 struct AttributeDecl
 {
-	inline Node node;
+	inline Decl node;
 	Node* expr;
-	Ident* name;
 	AttributeKind attr_kind;
 }
 
 struct ErrorDecl
 {
-	inline Node node;
-	Ident* name;
+	inline Decl node;
 	NodeArray fields;
 }
 
 struct ErrorUnionDecl
 {
-	inline Node node;
+	inline Decl node;
 	Node* err;
 	Node* type;
 }
@@ -54,8 +52,7 @@ struct ErrorUnionDecl
 *>
 struct TypedefDecl
 {
-	inline Node node;
-	Ident* name;
+	inline Decl node;
 	Node* base_type;
 	Node* generics;
 	NodeArray attributes;
@@ -64,8 +61,7 @@ struct TypedefDecl
 
 struct FnDecl
 {
-	inline Node node;
-	Ident* name;
+	inline Decl node;
 	Node* ret_type;
 	Node* body;
 	NodeArray generics;
@@ -81,10 +77,9 @@ struct FnDecl
 *>
 struct VarDecl
 {
-	inline Node node;
+	inline Decl node;
 	VarDeclKind var_kind;
 	VarDeclFlags var_flags;
-	Ident* name;
 	Node* type;
 	Node* init_expr;
 	Node* next;
@@ -93,8 +88,7 @@ struct VarDecl
 
 struct EnumDecl
 {
-	inline Node node;
-	Ident* name;
+	inline Decl node;
 	bool is_inline_backing;
 	Node* backing_type; // optional: ":" type
 	NodeArray assoc_params; // optional enum_param_list inside ":"
@@ -108,10 +102,9 @@ struct EnumDecl
 *>
 struct StructDecl
 {
-	inline Node node;
+	inline Decl node;
 	NodeArray fields;
 	Node* type;
 	Node* next;
-	Ident* name;
 	NodeArray attributes;
 }

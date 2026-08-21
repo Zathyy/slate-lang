@@ -23,9 +23,6 @@ fn void diagnose(
 {
 	SourceFile* sf = ctx.current_source_file;
 
-	String[] lines = sf.content.tsplit("\n");
-	String line_str = lines[range.start.line != 0 ? range.start.line - 1 : 0];
-
 	Ansi color;
 	switch (level)
 	{
@@ -38,6 +35,12 @@ fn void diagnose(
 	io::eprintf("%s:%s:%s: %s%s%s:%s ", sf.path, range.start.line + 1, range.start.column + 1, color, Ansi.BOLD, level.description, Ansi.RESET);
 	io::eprintf(fmt, ...args);
 	io::eprintn("");
+
+	if (!sf || sf.content.len == 0) return;
+
+	String[] lines = sf.content.tsplit("\n");
+	if (lines.len == 0) return;
+	sz target_line = math::min((sz)range.start.line, lines.len - 1);
 
 	int line_num_width = 4;
 	sz max_line = (sz)range.start.line + 1;

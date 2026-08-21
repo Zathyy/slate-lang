@@ -40,6 +40,44 @@ fn Node* parse_module_decl(ParseContext* ctx)
 }
 
 <*
+ @require ctx.current.kind == IMPORT
+*>
+fn Node* parse_import_decl(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	advance(ctx);
+	ImportDecl* node = ctx.ast.alloc_node(ImportDecl, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+	List{Node*} temp_paths;
+	temp_paths.init(tmem, 4);
+
+	while (!ctx.eof())
+	{
+		Node* path_node = parse_path(ctx);
+		temp_paths.push(path_node);
+
+		if (path_node.kind == ERROR)
+		{
+			node.flags.has_error = true;
+		}
+
+		if (!consume(ctx, COMMA)) break;
+		if (ctx.is(EOS))
+		{
+			diagnostics::error(ctx.context, ctx.current.range, "Expected another path after ','");
+			node.flags.has_error = true;
+			break;
+		}
+	}
+
+	node.paths = alloc::clone_slice(ctx.allocator, temp_paths.array_view());
+
+	expect(ctx, node, EOS);
+
+	return (Node*)node;
+}
+
+<*
  @require ctx.current.kind == LBRACKET
 *>
 fn NodeArray parse_attributes(ParseContext* ctx) => @pool()

@@ -4,7 +4,7 @@ import std::collections::list;
 
 struct IfStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* condition;
 	Node* then_body;
 	Node* else_body;
@@ -12,13 +12,13 @@ struct IfStmt
 
 struct CompoundStmt
 {
-	inline Node node;
+	inline Stmt node;
 	NodeArray statements;
 }
 
 struct SwitchStmt
 {
-	inline Node node;
+	inline Stmt node;
 	NodeArray cases;
 	Node* cond;
 }
@@ -30,7 +30,7 @@ struct SwitchStmt
 *>
 struct CaseStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* expr;
 	Node* to_expr;
 	Node* body;
@@ -41,25 +41,25 @@ struct CaseStmt
 *>
 struct DefaultStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* body;
 }
 
 struct ContinueBreakStmt
 {
-	inline Node node;
+	inline Stmt node;
 	bool is_continue;
 }
 
 struct ReturnStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* expr;
 }
 
 struct ExprStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* expr_stmt;
 }
 
@@ -71,7 +71,7 @@ struct ExprStmt
 *>
 struct ForStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* init;
 	Node* cond;
 	Node* incr;
@@ -80,21 +80,21 @@ struct ForStmt
 
 struct WhileStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* cond;
 	Node* body;
 }
 
 struct DoWhileStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* body;
 	Node* cond;
 }
 
 struct DeferStmt
 {
-	inline Node node;
+	inline Stmt node;
 	DeferKind defer_kind;
 	Node* ident;
 	Node* body;
@@ -102,7 +102,7 @@ struct DeferStmt
 
 struct AssertStmt
 {
-	inline Node node;
+	inline Stmt node;
 	Node* expr;
 	Node* message;
 	NodeArray args;
@@ -110,5 +110,5 @@ struct AssertStmt
 
 struct NopStmt
 {
-	inline Node node;
+	inline Stmt node;
 }

@@ -35,8 +35,13 @@ fn int main(String[] args) => @pool()
 fn void compile(CompilerContext* context)
 {
 	SemaContext* sema = sema::create(context);
-	sema::index(sema);
-	sema::analyze(sema);
+	sema::run_pipeline(sema);
+
+	SourceFile* main_file = context.files.get("C:\\Users\\Zathy\\Documents\\slate-lang\\lib\\std\\libc\\libc.sl")!!;
+    Scope* main_scope = main_file.sema.scope;
+
+	sema::resolve_path(sema, main_scope, "env::WIN32");        // Alias match via get_import("env")
+	sema::resolve_path(sema, main_scope, "std::core::env::WIN32"); // Full module path fallback
 }
 
 fn void process_stdlib(CompilerContext* context) => @pool()

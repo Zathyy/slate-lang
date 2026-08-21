@@ -45,3 +45,31 @@ fn void add_node(Module* mod, Node* node)
 		mod.module_decls.push(node.as(ModuleDecl));
 	}
 }
+
+<*
+ Returns the fully qualified name of a symbol relative to this module.
+ e.g., mod.get_qname("WIN32") -> "std::core::env::WIN32"
+*>
+fn String get_qname(Allocator alloc, Module* mod, String symbol_name)
+{
+    if (mod.name.len == 0) return symbol_name;
+    return string::format(alloc, "%s::%s", mod.name, symbol_name);
+}
+
+<*
+ Finds a top-level Node/Decl in this module by its short name.
+*>
+fn Decl* Module.find_decl(Module* mod, String name)
+{
+    foreach (Node* node : mod.nodes)
+    {
+    	if (!node) continue;
+        if (node.is_decl())
+        {
+            Decl* decl = (Decl*)node;
+            if (!decl.name) continue;
+            if (decl.name.text == name) return (Decl*)node;
+        }
+    }
+    return null;
+}

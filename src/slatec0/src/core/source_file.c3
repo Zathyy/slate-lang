@@ -19,7 +19,7 @@ fn SourceFile* create(CompilerContext* context, Lexer* lexer, String path)
 	source_file.ast.statements.init(alloc);
 	source_file.path = path.copy(alloc);
 
-	context.files.set(path, source_file);
+	context.files.set(source_file.path, source_file);
 
 	return source_file;
 }

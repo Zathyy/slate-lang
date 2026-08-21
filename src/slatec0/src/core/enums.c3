@@ -214,6 +214,7 @@ enum TypeKind : char
 	TYPE_IPTR,
 	TYPE_UPTR,
 
+	TYPE_FN,
 	TYPE_ARRAY,
 	TYPE_ALIAS,
 	TYPE_POINTER,

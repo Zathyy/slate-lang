@@ -9,105 +9,75 @@ fn Scope* create(Allocator alloc, Range range, Scope* parent = null)
 	scope.parent = parent;
 	scope.range = range;
 	scope.children.init(alloc);
-	scope.functions.init(alloc);
-	scope.variables.init(alloc);
-	scope.types.init(alloc);
+	scope.symbols.init(alloc);
+	scope.imports.init(alloc);
+
+	if (parent)
+    {
+        parent.children.push(scope);
+    }
 
 	return scope;
 }
 
-fn void free(Scope* scope)
+fn bool define(Scope* scope, String name, Decl* decl)
 {
-	if (!scope) return;
-
-	free(scope.parent);
-
-	scope.children.free();
-	scope.functions.free();
-	scope.variables.free();
-	scope.types.free();
-}
-
-
-fn void add_variable(Scope* scope, Allocator alloc, String name, Node* node)
-{
-	VariableInfo* variable = alloc::new(alloc, VariableInfo);
-
-	variable.name = name;
-	variable.mod = name;
-	variable.node = node;
-
-	scope.variables.set(name, variable);
-}
-
-fn bool has_variable(Scope* scope, String name)
-{
-    if (scope.variables.has_key(name))
-	{
-        return true;
+    if (scope.symbols.has_key(name))
+    {
+        return false; // Collision in current scope!
     }
 
-    if (scope.parent)
-	{
-        return has_variable(scope.parent, name);
-    }
-
-    return false;
+    scope.symbols.set(name, decl);
+    return true;
 }
 
-fn VariableInfo* get_variable(Scope* scope, String name)
+<*
+ Look up a declaration by walking up the parent scope chain.
+*>
+fn Decl* Scope.lookup(Scope* scope, String name)
 {
-    if (scope.variables.has_key(name))
-	{
-        return scope.variables.get(name)!!;
-    }
-
-    if (scope.parent)
-	{
-        return get_variable(scope.parent, name);
+    Scope* current = scope;
+    while (current != null)
+    {
+        if (current.symbols.has_key(name))
+        {
+            return current.symbols.get(name)!!;
+        }
+        current = current.parent;
     }
 
     return null;
 }
 
-fn FunctionInfo* add_function(Scope* scope, Allocator alloc, String name, String mod, Node* node)
+<*
+ Check if a symbol exists anywhere in the scope hierarchy.
+*>
+fn bool Scope.has(Scope* scope, String name)
 {
-    FunctionInfo* function = alloc::new(alloc, FunctionInfo);
-
-    function.mod  = mod;
-    function.node = node;
-
-    scope.functions.set(name, function);
-
-    return function;
+    return scope.lookup(name) != null;
 }
 
-fn bool has_function(Scope* scope, String name)
+fn void add_import(Scope* scope, String name)
 {
-    if (scope.functions.has_key(name))
-	{
-        return true;
-    }
-
-    if (scope.parent)
-	{
-        return has_function(scope.parent, name);
-    }
-
-    return false;
+	scope.imports.push(name);
 }
 
-fn FunctionInfo* get_function(Scope* scope, String name)
+fn String Scope.get_import(Scope* scope, String name) => @pool()
 {
-    if (scope.functions.has_key(name))
-	{
-        return scope.functions.get(name)!!;
+    Scope* current = scope;
+    while (current != null)
+    {
+        foreach (String imp : current.imports)
+        {
+            if (imp == name) return imp;
+
+            if (imp.ends_with(string::tformat("::%s", name)))
+            {
+            	return imp;
+            }
+        }
+        current = current.parent;
     }
 
-    if (scope.parent)
-	{
-        return get_function(scope.parent, name);
-    }
-
-    return null;
+    return "";
 }
