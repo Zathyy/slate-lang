@@ -249,7 +249,7 @@ fn Node* parse_fn_decl(ParseContext* ctx)
 	if (ctx.is(ARROW))
 	{
 		expect(ctx, node, ARROW);
-		node.ret_type = parse_type(ctx);
+		node.ret_type = parse_type_expr(ctx);
 	}
 
 	if (ctx.is(LBRACE))

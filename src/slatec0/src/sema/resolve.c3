@@ -16,35 +16,35 @@ import std::collections;
 fn Decl* resolve_path(SemaContext* ctx, Scope* current_scope, String path) => @pool()
 {
 	sz last_sep = path.rindex_of("::") ?? -1;
-    if (last_sep == -1)
-    {
-        return current_scope.lookup(path);
-    }
-    diagnostics::log_error("[resolve_path]: last_sep: %d", last_sep);
-    diagnostics::log_error("[resolve_path]: path: %s", path);
-
-    String prefix = path[0 .. last_sep - 1];
-    String target_symbol = path[last_sep + 2..^1];
-
-    diagnostics::log_error("[resolve_path]: prefix: %s", prefix);
-    diagnostics::log_error("[resolve_path]: symbol: %s", target_symbol);
-
-    String target_mod_name = current_scope.get_import(prefix);
-    diagnostics::log_error("[resolve_path]: target_mod_name: %s", target_mod_name);
-    if (target_mod_name.len == 0 && ctx.context.modules.has_key(prefix))
+	if (last_sep == -1)
 	{
-	    target_mod_name = prefix;
+		return scope::lookup(current_scope, path);
+	}
+	diagnostics::log_error("[resolve_path]: last_sep: %d", last_sep);
+	diagnostics::log_error("[resolve_path]: path: %s", path);
+
+	String prefix = path[0 .. last_sep - 1];
+	String target_symbol = path[last_sep + 2..^1];
+
+	diagnostics::log_error("[resolve_path]: prefix: %s", prefix);
+	diagnostics::log_error("[resolve_path]: symbol: %s", target_symbol);
+
+	String target_mod_name = current_scope.get_import(prefix);
+	diagnostics::log_error("[resolve_path]: target_mod_name: %s", target_mod_name);
+	if (target_mod_name.len == 0 && ctx.context.modules.has_key(prefix))
+	{
+		target_mod_name = prefix;
 	}
 
 	if (target_mod_name.len > 0)
-    {
-        if (Module* target_mod = ctx.context.modules.get(target_mod_name) ?? null)
-        {
-       		return target_mod.find_decl(target_symbol);
-        }
-    }
+	{
+		if (Module* target_mod = ctx.context.modules.get(target_mod_name) ?? null)
+		{
+			return target_mod.find_decl(target_symbol);
+		}
+	}
 
-    return null;
+	return null;
 }
 
 <*
@@ -53,6 +53,86 @@ fn Decl* resolve_path(SemaContext* ctx, Scope* current_scope, String path) => @p
 *>
 fn uint align_up(uint value, uint alignment) @inline
 {
-    if (alignment <= 1) return value;
-    return (value + alignment - 1) & ~(alignment - 1);
+	if (alignment <= 1) return value;
+	return (value + alignment - 1) & ~(alignment - 1);
+}
+
+fn Type* resolve_type_by_name(SemaContext* ctx, String name)
+{
+    // Check built-ins or cached primitive types in Lookup ("i32", "u8", "void", etc.)
+    if (Type* t = ctx.context.lookup.types.get(name) ?? null)
+    {
+        return t;
+    }
+
+    //  Resolve via Scope or qualified module path ("MyStruct", "std::core::String")
+    if (Decl* decl = resolve_path(ctx, ctx.scope, name))
+    {
+        if (decl.resolved_type != null)
+        {
+            return decl.resolved_type;
+        }
+
+        // Fallback to node_types table if stored separately on the AST node
+        if (Type* t = get_type(ctx, (Node*)decl) ?? null)
+        {
+            return t;
+        }
+    }
+
+    diagnostics::log_error("[Sema]: Unknown type identifier '%s'", name);
+    return null;
+}
+
+fn Type* resolve_type(SemaContext* ctx, Node* type)
+{
+	if (type == null) return null;
+
+	switch (type.kind)
+	{
+		case IDENT_EXPR:
+		{
+			IdentExpr* ident = type.as(IdentExpr);
+            String name = ident.ident.text;
+            return resolve_type_by_name(ctx, name);
+		}
+		case TYPE_EXPR:
+		{
+			TypeExpr* type_expr = type.as(TypeExpr);
+			switch (type_expr.type_kind)
+			{
+				case TYPE_IDENTIFIER:
+				{
+					String name = type_expr.unresolved.name.text;
+					return resolve_type_by_name(ctx, name);
+				}
+
+				case TYPE_POINTER:
+				{
+					Type* base = resolve_type(ctx, type_expr.modify.base);
+					return lookup::get_or_create_pointer(ctx.context.lookup, base);
+				}
+
+				case TYPE_ARRAY:
+				{
+					Type* elem = resolve_type(ctx, type_expr.array.base);
+
+					ulong len = 0;
+					if (type_expr.array.len_expr != null)
+					{
+						len = eval_const_int(ctx, type_expr.array.len_expr);
+					}
+
+					return lookup::get_or_create_array(ctx.context.lookup, elem, len);
+				}
+
+				default:
+					diagnostics::log_error("[Sema]: Unsupported TypeExpr kind");
+					return null;
+			}
+		}
+		default:
+			diagnostics::log_error("Unknown type kind: %s", type.kind.description);
+			unreachable("");
+	}
 }

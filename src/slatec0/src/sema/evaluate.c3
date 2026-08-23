@@ -1,4 +1,4 @@
-module slate::sema::eval;
+module slate::sema;
 
 import slate::core;
 import slate::lexer;
@@ -231,5 +231,51 @@ fn String get_qualified_name(CompilerContext* ctx, Node* node)
             return node.as(PathAtom).path.text;
         default:
             return "";
+    }
+}
+
+*/
+
+fn ulong eval_const_int(SemaContext* ctx, Node* expr)
+{
+    if (expr == null) return 0;
+
+    switch (expr.kind)
+    {
+        case LITERAL_EXPR:
+        {
+            LiteralExpr* lit = expr.as(LiteralExpr);
+
+            if (lit.lit_kind == INT)
+            {
+                return lit.value.to_ulong() ?? 0;
+            }
+
+            diagnostics::log_error("[Sema]: Expected integer literal for array length");
+            return 0;
+        }
+
+        case BINARY_EXPR:
+        {
+            // Simple constant folding for basic expressions like [10 + 2]
+            BinaryExpr* bin = expr.as(BinaryExpr);
+            ulong left = eval_const_int(ctx, bin.left);
+            ulong right = eval_const_int(ctx, bin.right);
+
+            switch (bin.op)
+            {
+                case OP_ADD: return left + right;
+                case OP_SUB: return left - right;
+                case OP_MULT: return left * right;
+                case OP_DIV: return right != 0 ? left / right : 0;
+                default:
+                    diagnostics::log_error("[Sema]: Unsupported operator in constant expression");
+                    return 0;
+            }
+        }
+
+        default:
+            diagnostics::log_error("[Sema]: Non-constant expression used for array length");
+            return 0;
     }
 }

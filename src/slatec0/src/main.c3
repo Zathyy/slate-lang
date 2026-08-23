@@ -3,27 +3,46 @@ module slate;
 import std::io;
 import seali;
 
-//enum Action
-//{
-//	COMPILE,
-//}//
+enum Action
+{
+	COMPILE,
+	COMPILER_RUN,
+}
 
-//$expand(seali::@derive(Cli));
-//struct Cli @Command({.name = "slatec", .about = "Slate compiler"})
-//{
-//
-//}
+$expand(seali::@derive(Cli));
+struct Cli @Command({.name = "slatec", .about = "Slate compiler"})
+{
+	String src;
+}
+
+Cli cli;
 
 fn int main(String[] args) => @pool()
 {
 	log::set_priority_all(DEBUG);
 
+	cli.parse(args)!!;
+
 	CompilerContext* context = context::create();
 	defer context::free(context);
+
+	find_root_path(context);
+
+	path::chdir(globals::root_path)!!;
 
 	path::mkdir("build")!!;
 	path::mkdir("build/obj")!!;
 	path::mkdir("build/ir")!!;
+
+	Path cwd = path::tcwd()!!;
+
+	globals::build_path = cwd.append(context.alloc, "build")!!;
+	globals::obj_path = cwd.append(context.alloc, "build/obj")!!;
+	globals::ir_path = cwd.append(context.alloc, "build/ir")!!;
+
+	diagnostics::log_info("Set build_path %s", globals::build_path);
+	diagnostics::log_info("Set obj_path %s", globals::obj_path);
+	diagnostics::log_info("Set ir_path %s", globals::ir_path);
 
 	process_stdlib(context);
 
@@ -32,21 +51,9 @@ fn int main(String[] args) => @pool()
 	return 0;
 }
 
-fn void compile(CompilerContext* context)
+fn void find_root_path(CompilerContext* context)
 {
-	SemaContext* sema = sema::create(context);
-	sema::run_pipeline(sema);
-
-	SourceFile* main_file = context.files.get("C:\\Users\\Zathy\\Documents\\slate-lang\\lib\\std\\libc\\libc.sl")!!;
-    Scope* main_scope = main_file.sema.scope;
-
-	sema::resolve_path(sema, main_scope, "env::WIN32");        // Alias match via get_import("env")
-	sema::resolve_path(sema, main_scope, "std::core::env::WIN32"); // Full module path fallback
-}
-
-fn void process_stdlib(CompilerContext* context) => @pool()
-{
-    String exe = utils::get_executable_path();
+ 	String exe = utils::get_executable_path();
     if (!exe)
     {
    		diagnostics::log_error("Failed to retrieve exe path");
@@ -59,7 +66,7 @@ fn void process_stdlib(CompilerContext* context) => @pool()
     Path current = (Path)exe;
     while (true)
     {
-     	if (path::is_dir((Path)string::tformat("%s/lib", current)))
+	    if (path::is_dir((Path)string::tformat("%s/lib", current)))
 		{
 			root_dir = current;
 			break;
@@ -70,8 +77,42 @@ fn void process_stdlib(CompilerContext* context) => @pool()
 		current = new_path;
     }
 
+	globals::root_path = root_dir.copy(context.alloc);
+}
 
-    Path stdlib = string::tformat("%s/lib/std", ((Path)root_dir)).to_path(context.alloc)!!;
+fn void compile(CompilerContext* context)
+{
+	path::traverse((Path)cli.src, fn bool?(path, is_dir, data) {
+        CompilerContext* context = (CompilerContext*)data;
+
+        if (!is_dir && path.has_extension("sl"))
+        {
+            context::process_file(context, path);
+        }
+
+        return false;
+    }, context)!!;
+
+	SemaContext* sema = sema::create(context);
+	sema::run_pipeline(sema);
+
+	CodegenContext* cg = codegen::create(context);
+	String path = utils::get_msvc_sdk(context.alloc);
+
+	foreach (Module* mod : context.modules.value_iter())
+	{
+		codegen::emit_module(cg, mod);
+	}
+
+	Module* main_mod = context.modules.get("main")!!;
+
+	LinkerContext* linker = linker::create(context);
+	linker::link(linker, main_mod)!!;
+}
+
+fn void process_stdlib(CompilerContext* context) => @pool()
+{
+    Path stdlib = string::tformat("%s/lib/std", ((Path)globals::root_path)).to_path(context.alloc)!!;
 
     diagnostics::log_info("stdlib path = %s", stdlib);
 

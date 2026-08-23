@@ -14,6 +14,10 @@ import llvm;
 
 import std::io;
 
+faultdef
+    TARGET_INIT_FAILED,
+    TARGET_MACHINE_CREATION_FAILED;
+
 DynamicArenaAllocator g_arena;
 
 <*
@@ -25,6 +29,7 @@ fn CompilerContext* create(Target target = {})
 	ctx.alloc = &g_arena;
 
 	ctx.llvm_context = llvm::context_create();
+	ctx.llvm_target = create_target_machine()!!;
 
 	g_arena.init(mem, 4096);
 
@@ -87,4 +92,50 @@ fn bool process_file(CompilerContext* context, String path) => @pool()
 	}
 
 	return process(context, buffer, path);
+}
+
+fn LLVMTargetMachineRef? create_target_machine()
+{
+    llvm::initialize_X86_target();
+    llvm::initialize_X86_target_info();
+    llvm::initialize_X86_target_mc();
+    llvm::initialize_X86_asm_printer();
+    llvm::initialize_X86_asm_parser();
+
+    CChar* triple = llvm::get_default_target_triple();
+
+    LLVMTargetRef target = null;
+    CChar* error_msg = null;
+    if (llvm::get_target_from_triple(triple, &target, &error_msg) != 0)
+    {
+        diagnostics::log_error("[LLVM]: Failed to resolve target triple: %s", (ZString)error_msg);
+        llvm::dispose_message(error_msg);
+        llvm::dispose_message(triple);
+        return TARGET_INIT_FAILED~;
+    }
+
+    CChar* cpu = llvm::get_host_cpu_name();
+    CChar* features = llvm::get_host_cpu_features();
+
+    LLVMTargetMachineRef target_machine = llvm::create_target_machine(
+        target,
+        triple,
+        cpu,
+        features,
+        CODE_GEN_LEVEL_NONE,  // None, Less, Default, Aggressive
+        RELOC_DEFAULT,        // Default (PIC for Windows x64)
+        CODE_MODEL_DEFAULT
+    );
+
+    llvm::dispose_message(triple);
+    llvm::dispose_message(cpu);
+    llvm::dispose_message(features);
+
+    if (target_machine == null)
+    {
+        diagnostics::log_error("[LLVM]: Failed to create Target Machine.");
+        return TARGET_MACHINE_CREATION_FAILED~;
+    }
+
+    return target_machine;
 }

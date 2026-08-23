@@ -23,8 +23,6 @@ fn Module* create(CompilerContext* ctx, String name)
 
 	diagnostics::log_debug("Created module: %s", name);
 
-	mod.llvm_module = llvm::module_create_with_name((CChar*)name.ptr);
-
 	mod.name = name;
 	mod.nodes.init(ctx.alloc);
 	mod.module_decls.init(ctx.alloc);

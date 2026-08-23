@@ -5,6 +5,7 @@ import slate::core::visitor;
 
 const String[] DEFAULT_IMPORTS = {
 	"std::core",
+	"std::core::string",
 	"std::core::env"
 };
 
@@ -74,6 +75,10 @@ fn void index_source_file(SemaContext* ctx, SourceFile* sf)
 				// Handle Enum registration
 				index_enum_decl(ctx, global_scope, (Decl*)node);
 				break;
+			case TYPEDEF_DECL:
+				TypedefDecl* decl = node.as(TypedefDecl);
+				index_typedef_decl(ctx, global_scope, decl);
+				break;
 			default:
 				break;
 		}
@@ -102,6 +107,30 @@ fn void index_struct_decl(SemaContext* ctx, Scope* scope, StructDecl* s)
 
 	decl.resolved_type = struct_type;
 }
+
+fn void index_typedef_decl(SemaContext* ctx, Scope* scope, TypedefDecl* td)
+{
+	Decl* decl = (Decl*)td;
+
+	if (!scope::define(scope, decl.name.text, decl))
+	{
+		diagnostics::error(ctx.context, decl.range, "Redefinition of struct symbol in scope");
+		return;
+	}
+
+	diagnostics::log_info("Defined struct: %s", decl.name.text);
+
+	Type* struct_type = lookup::register_type(
+		ctx.context.lookup,
+		ctx.alloc,
+		decl.name.text,
+		decl,
+		TYPE_ALIAS
+	);
+
+	decl.resolved_type = struct_type;
+}
+
 
 fn void index_function_decl(SemaContext* ctx, Scope* scope, FnDecl* f)
 {

@@ -34,7 +34,7 @@ fn bool define(Scope* scope, String name, Decl* decl)
 <*
  Look up a declaration by walking up the parent scope chain.
 *>
-fn Decl* Scope.lookup(Scope* scope, String name)
+fn Decl* lookup(Scope* scope, String name)
 {
     Scope* current = scope;
     while (current != null)
@@ -54,7 +54,7 @@ fn Decl* Scope.lookup(Scope* scope, String name)
 *>
 fn bool Scope.has(Scope* scope, String name)
 {
-    return scope.lookup(name) != null;
+    return scope::lookup(scope, name) != null;
 }
 
 fn void add_import(Scope* scope, String name)

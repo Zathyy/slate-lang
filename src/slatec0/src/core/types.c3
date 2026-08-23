@@ -8,6 +8,7 @@ import llvm;
 struct CompilerContext
 {
 	LLVMContextRef llvm_context;
+	LLVMTargetMachineRef llvm_target;
 	Allocator alloc;
 	Lookup* lookup;
 	HashMap{String, SourceFile*} files;

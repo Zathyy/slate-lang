@@ -46,6 +46,8 @@ fn void run_pipeline(SemaContext* ctx)
 	// Pass 1: Index all declarations & resolve candidate signatures
     index_pass(ctx);
 
+    resolve_decls_pass(ctx);
+
     //// Pass 3: Resolve global variable declarations & types
     //variable_pass(ctx);
 

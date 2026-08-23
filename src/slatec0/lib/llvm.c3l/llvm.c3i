@@ -5477,6 +5477,21 @@ extern fn LLVMBool initialize_native_asm_printer()
 extern fn LLVMBool initialize_native_disassembler()
 @cname("LLVMInitializeNativeDisassembler");
 
+extern fn void initialize_X86_target_info()
+@cname("LLVMInitializeX86TargetInfo");
+
+extern fn void initialize_X86_target()
+@cname("LLVMInitializeX86Target");
+
+extern fn void initialize_X86_target_mc()
+@cname("LLVMInitializeX86TargetMC");
+
+extern fn void initialize_X86_asm_printer()
+@cname("LLVMInitializeX86AsmPrinter");
+
+extern fn void initialize_X86_asm_parser()
+@cname("LLVMInitializeX86AsmParser");
+
 extern fn LLVMTargetDataRef get_module_data_layout(
   LLVMModuleRef m)
 @cname("LLVMGetModuleDataLayout");
