@@ -30,11 +30,9 @@ fn void resolve_decls_pass(SemaContext* ctx)
                     FnDecl* fn_decl = node.as(FnDecl);
                     if (fn_decl.ret_type)
                     {
-                    	fn_decl.resolved_type = resolve_type(ctx, fn_decl.ret_type);
-                    }
-                    else
-                    {
-                   		fn_decl.resolved_type = lookup::primitive_type(ctx.context.lookup, TYPE_VOID);
+                    	Expr* expr = (Expr*)fn_decl.ret_type;
+                    	expr.resolved_type = resolve_type(ctx, fn_decl.ret_type);
+                     	set_type(ctx, expr, expr.resolved_type);
                     }
 
                     foreach (Node* param_node : fn_decl.params)

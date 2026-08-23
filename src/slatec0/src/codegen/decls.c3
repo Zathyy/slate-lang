@@ -42,7 +42,8 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
     String fn_name = fn_decl.name.text;
     CChar* c_fn_name = (CChar*)fn_name.ptr;
 
-    LLVMTypeRef ret_type = map_type(gen, fn_decl.resolved_type.llvm_type);
+    Expr* ret_expr = (Expr*)fn_decl.ret_type;
+    LLVMTypeRef ret_type = map_type(gen, ret_expr != null ? ret_expr.resolved_type : null);
 
     List{LLVMTypeRef} param_types;
     param_types.init(gen.alloc);
@@ -61,6 +62,13 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
     );
 
     LLVMValueRef fn_val = llvm::add_function(gen.mod, c_fn_name, fn_type);
+
+    if (fn_decl.flags.is_extern || fn_decl.body == null)
+    {
+        llvm::set_linkage(fn_val, EXTERNAL_LINKAGE);
+        return true;
+    }
+
     gen.current_fn = fn_val;
 
     LLVMBasicBlockRef entry_bb = llvm::append_basic_block_in_context(

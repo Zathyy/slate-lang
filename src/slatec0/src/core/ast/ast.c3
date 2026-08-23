@@ -44,7 +44,7 @@ struct Stmt
 struct Expr
 {
 	inline Node node;
-	Type* evaluated_type;
+	Type* resolved_type;
 }
 
 <*
