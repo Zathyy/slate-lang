@@ -57,13 +57,15 @@ fn void? link_all(LinkerContext* ctx, Module* main_module)
 	}
 }
 
-fn void? link_executable(LinkerContext* ctx, String obj_path)
+fn String? link_executable(LinkerContext* ctx, String obj_path)
 {
     diagnostics::log_info("[Linker]: Invoking lld-link...");
 
+    String exe_path = string::format(ctx.context.alloc, "%s/%s", globals::build_path, "target.exe");
+
     // Construct winsysroot parameter
     String sysroot_flag = string::tformat("/winsysroot:%s", utils::get_msvc_sdk(tmem));
-    String out_flag     = string::tformat("/out:%s%s", globals::build_path, "target.exe");
+    String out_flag     = string::tformat("/out:%s", exe_path);
 
     String[*] args = {
         "lld-link",
@@ -87,7 +89,9 @@ fn void? link_executable(LinkerContext* ctx, String obj_path)
         return LINKER_EXEC_FAILED~;
     }
 
-    diagnostics::log_info("[Linker]: Successfully created '%s'", out_flag[5..]);
+    diagnostics::log_info("[Linker]: Successfully created '%s'", exe_path);
+
+    return exe_path;
 }
 
 fn void? emit_object_file(LinkerContext* ctx, Module* main_module, String obj_path)
@@ -112,7 +116,7 @@ fn void? emit_object_file(LinkerContext* ctx, Module* main_module, String obj_pa
     }
 }
 
-fn void? link(LinkerContext* ctx, Module* main_module)
+fn String? link(LinkerContext* ctx, Module* main_module)
 {
     link_all(ctx, main_module)!;
 
@@ -124,7 +128,7 @@ fn void? link(LinkerContext* ctx, Module* main_module)
 
     emit_object_file(ctx, main_module, obj_path)!;
 
-    link_executable(ctx, obj_path)!;
+    return link_executable(ctx, obj_path)!;
 }
 
 fn void dump_ir_to_file(Module* mod, String path)

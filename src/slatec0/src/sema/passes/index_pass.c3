@@ -3,7 +3,23 @@ module slate::sema;
 import slate::core;
 import slate::core::visitor;
 
-const String[] DEFAULT_IMPORTS = {
+//  module foo::bar;
+//  import zoo;
+//
+//  module foo::bar::baz;
+//  import xyz;
+//
+//  Section Scope 1 (range: lines 1-3)
+//  ├── Imports: [zoo, std::core, ...]
+//  └── Parent -> Module Scope (foo::bar)
+//                   └── Builtin Scope
+//
+//  Section Scope 2 (range: lines 5-7)
+//  ├── Imports: [xyz, std::core, ...]
+//  └── Parent -> Module Scope (foo::bar::baz)
+//                   └── Builtin Scope
+
+const String[*] DEFAULT_IMPORTS = {
 	"std::core",
 	"std::core::string",
 	"std::core::env"
@@ -13,22 +29,14 @@ fn void index_pass(SemaContext* ctx)
 {
 	foreach (SourceFile* sf : ctx.context.files.value_iter())
 	{
-		ctx.context.current_source_file = sf;
 		index_source_file(ctx, sf);
 	}
 }
 
 fn void index_source_file(SemaContext* ctx, SourceFile* sf)
 {
-	Scope* global_scope = sf.sema.scope;
-
-	foreach (String path : DEFAULT_IMPORTS)
-	{
-		scope::add_import(global_scope, path);
-		diagnostics::log_info("Added import: %s", path);
-	}
-
 	Module* mod;
+	Scope* section;
 
 	foreach (Node* node : sf.ast.statements)
 	{
@@ -45,8 +53,17 @@ fn void index_source_file(SemaContext* ctx, SourceFile* sf)
 			ModuleDecl* decl = node.as(ModuleDecl);
 			PathAtom* atom = decl.path.as(PathAtom);
 			mod = mod::create(ctx.context, atom.path.text);
+			section = scope::create(ctx.alloc, node.range, mod.scope);
+
+			foreach (String path : DEFAULT_IMPORTS)
+            {
+                scope::add_import(section, path);
+            }
+
+            continue;
 		}
 
+		ctx.node_scopes.set(node, section);
 		mod::add_node(mod, node);
 
 		switch (node.kind)
@@ -55,29 +72,29 @@ fn void index_source_file(SemaContext* ctx, SourceFile* sf)
 				ImportDecl* decl = node.as(ImportDecl);
 				foreach (Node* path : decl.paths)
 				{
-					scope::add_import(global_scope, path.as(PathAtom).path.text);
+					scope::add_import(section, path.as(PathAtom).path.text);
 					diagnostics::log_info("Added import: %s", path.as(PathAtom).path.text);
 				}
 				break;
 			case STRUCT_DECL:
 				StructDecl* decl = node.as(StructDecl);
-				index_struct_decl(ctx, global_scope, decl);
+				index_struct_decl(ctx, mod.scope, decl);
 				break;
 			case FN_DECL:
 				FnDecl* decl = node.as(FnDecl);
-				index_function_decl(ctx, global_scope, decl);
+				index_function_decl(ctx, mod.scope, decl);
 				break;
 			case VAR_DECL:
 				VarDecl* decl = node.as(VarDecl);
-				index_var_decl(ctx, global_scope, decl);
+				index_var_decl(ctx, mod.scope, decl);
 				break;
 			case ENUM_DECL:
 				// Handle Enum registration
-				index_enum_decl(ctx, global_scope, (Decl*)node);
+				index_enum_decl(ctx, mod.scope, (Decl*)node);
 				break;
 			case TYPEDEF_DECL:
 				TypedefDecl* decl = node.as(TypedefDecl);
-				index_typedef_decl(ctx, global_scope, decl);
+				index_typedef_decl(ctx, mod.scope, decl);
 				break;
 			default:
 				break;
@@ -118,9 +135,9 @@ fn void index_typedef_decl(SemaContext* ctx, Scope* scope, TypedefDecl* td)
 		return;
 	}
 
-	diagnostics::log_info("Defined struct: %s", decl.name.text);
+	diagnostics::log_info("Defined typedef: %s", decl.name.text);
 
-	Type* struct_type = lookup::register_type(
+	Type* typedef_type = lookup::register_type(
 		ctx.context.lookup,
 		ctx.alloc,
 		decl.name.text,
@@ -128,7 +145,7 @@ fn void index_typedef_decl(SemaContext* ctx, Scope* scope, TypedefDecl* td)
 		TYPE_ALIAS
 	);
 
-	decl.resolved_type = struct_type;
+	decl.resolved_type = typedef_type;
 }
 
 
@@ -144,11 +161,13 @@ fn void index_function_decl(SemaContext* ctx, Scope* scope, FnDecl* f)
 
 	diagnostics::log_info("Defined function: %s", decl.name.text);
 
-	Type* fn_type = alloc::new(ctx.context.alloc, Type);
-	fn_type.kind = TYPE_FN;
-	fn_type.status = UNRESOLVED;
-	fn_type.name = decl.name.text;
-	fn_type.data.decl = decl;
+	Type* fn_type = lookup::register_type(
+		ctx.context.lookup,
+		ctx.alloc,
+		decl.name.text,
+		decl,
+		TYPE_FN
+	);
 
 	decl.resolved_type = fn_type;
 }

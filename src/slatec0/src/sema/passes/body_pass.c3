@@ -5,19 +5,49 @@ import slate::core::visitor;
 
 fn void body_pass(SemaContext* ctx)
 {
-    foreach (SourceFile* sf : ctx.context.files.value_iter())
-    {
-        ctx.context.current_source_file = sf;
+	foreach (Module* mod : ctx.context.modules.value_iter())
+	{
+		foreach (Node* statement : mod.nodes)
+		{
+			if (!statement || statement.kind != FN_DECL) continue;
 
-        foreach (Node* statement : sf.ast.statements)
-        {
-            if (!statement || statement.kind != FN_DECL) continue;
+			FnDecl* decl = statement.as(FnDecl);
+			check_fn_body(ctx, ctx.node_scopes.get(statement) ?? mod.scope, decl);
+		}
+	}
+}
 
-            FnDecl* decl = statement.as(FnDecl);
-            //if (!decl.is_generic)
-            //{
-                //check_fn_body(ctx, decl);
-            //}
-        }
-    }
+fn void check_fn_body(SemaContext* ctx, Scope* parent_scope, FnDecl* fn_decl)
+{
+	Scope* fn_scope = scope::create(ctx.alloc, fn_decl.range, parent_scope);
+
+	Type* old_return_type = ctx.transient.return_type;
+	ctx.transient.return_type = fn_decl.ret_type != null
+		? resolve_type(ctx, parent_scope, fn_decl.ret_type)
+		: lookup::primitive_type(ctx.context.lookup, TYPE_VOID);
+
+	foreach (Node* param_node : fn_decl.params)
+	{
+		VarDecl* param = param_node.as(VarDecl);
+		Type* param_type = resolve_type(ctx, parent_scope, param.type);
+		param.resolved_type = param_type;
+
+		if (!param.name) continue;
+
+		if (!scope::define(fn_scope, param.name.text, (Decl*)param))
+		{
+			diagnostics::error(ctx.context, param.range, "Redefinition of parameter '%s'", param.name.text);
+		}
+	}
+
+	if (fn_decl.body != null)
+	{
+		foreach (Node* node : fn_decl.body.as(CompoundStmt).statements)
+		{
+			Stmt* stmt = (Stmt*)node;
+			check_stmt(ctx, fn_scope, stmt);
+		}
+	}
+
+	ctx.transient.return_type = old_return_type;
 }

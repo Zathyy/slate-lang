@@ -211,7 +211,7 @@ fn Node* parse_prefix_expr(ParseContext* ctx)
 				return null;
 			}
 
-			BuiltinExpr* builtin = ctx.ast.alloc_node(BuiltinExpr, { t.range.start, ctx.current.range.end });
+			BuiltinExpr* builtin = ctx.ast.alloc_node(BuiltinExpr, { t.range.start, ctx.current.range.end, ctx.current.range.file_id });
 			builtin.value = parse_ident(ctx);
 			return builtin;
 		}

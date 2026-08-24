@@ -26,10 +26,15 @@ fn Type* register_type(Lookup* lookup, Allocator alloc, String name, Decl* decl,
 	Type* type = alloc::new(alloc, Type);
 
 	type.name = name;
+	type.kind = kind;
 	type.status = UNRESOLVED;
 	type.data.decl = decl;
 
-	lookup.types.set(name, type);
+	if (kind != TYPE_ALIAS)
+    {
+        type.canonical = type;
+    }
+
 	return type;
 }
 
@@ -41,6 +46,8 @@ fn void create_builtin(Lookup* lookup, String name,
 	type.kind = kind;
 	type.status = RESOLVED;
 	type.llvm_type = llvm_type;
+
+	type.canonical = type;
 
 	type.data.builtin.bitsize = bits.ordinal;
 	type.data.builtin.bytesize = bytes;
@@ -91,6 +98,7 @@ fn void init_builtin_types(Lookup* lookup)
     create_builtin(lookup, "f64", TYPE_F64, BITS64, 8, llvm::double_type());
 
     create_builtin(lookup, "usize", TYPE_USIZE, pbits, psize, ptr_llvm_type);
+    create_builtin(lookup, "uptr", TYPE_UPTR, pbits, psize, ptr_llvm_type);
 }
 
 <*
@@ -108,6 +116,7 @@ fn Type* get_or_create_pointer(Lookup* lookup, Type* base)
     Type* ptr_type = alloc::new(lookup.alloc, Type);
     ptr_type.kind = TYPE_POINTER;
     ptr_type.status = RESOLVED;
+    ptr_type.canonical = ptr_type;
     ptr_type.size = arch::ptr_size(lookup.target.arch);
     ptr_type.alignment = arch::ptr_size(lookup.target.arch);
     ptr_type.data.ptr = base;
@@ -132,6 +141,7 @@ fn Type* get_or_create_array(Lookup* lookup, Type* elem, ulong len)
     Type* arr_type = alloc::new(lookup.alloc, Type);
     arr_type.kind = TYPE_ARRAY;
     arr_type.status = RESOLVED;
+    arr_type.canonical = arr_type;
     arr_type.size = (uint)(elem.size * len);
     arr_type.alignment = elem.alignment;
     arr_type.data.array = key;
@@ -140,14 +150,41 @@ fn Type* get_or_create_array(Lookup* lookup, Type* elem, ulong len)
     return arr_type;
 }
 
+<*
+ Returns or creates a canonical Slice Type (T[])
+*>
+fn Type* get_or_create_slice(Lookup* lookup, Type* elem)
+{
+    if (!elem) return null;
+
+    if (Type* cached = lookup.slice_cache.get(elem) ?? null)
+    {
+        return cached;
+    }
+
+    Type* slice_type = alloc::new(lookup.alloc, Type);
+    slice_type.kind = TYPE_SLICE;
+    slice_type.status = RESOLVED;
+    slice_type.canonical = slice_type;
+
+    // Fat pointer layout: { ptr: T*, len: usize }
+    uint ptr_sz = arch::ptr_size(lookup.target.arch);
+    slice_type.size = ptr_sz * 2;
+    slice_type.alignment = ptr_sz;
+    slice_type.data.slice = elem;
+
+    lookup.slice_cache.set(elem, slice_type);
+    return slice_type;
+}
+
 fn bool type_eq(Type* a, Type* b)
 {
-    if (!a || !b) return false;
+	if (!a || !b) return false;
 
-    while (a && a.kind == TYPE_ALIAS) a = a.data.ptr;
-    while (b && b.kind == TYPE_ALIAS) b = b.data.ptr;
+    Type* ca = a.canonical != null ? a.canonical : a;
+    Type* cb = b.canonical != null ? b.canonical : b;
 
-    return a == b;
+    return ca == cb;
 }
 
 fn bool Type.eq(&self, Type* other) @operator(==)

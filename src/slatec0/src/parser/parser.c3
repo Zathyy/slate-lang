@@ -174,7 +174,7 @@ fn bool parse(ParseContext* ctx, SourceFile* source_file) => @pool()
 {
 	ctx.lexer = source_file.lexer;
 	ctx.ast = &source_file.ast;
-	ctx.context.current_source_file = source_file;
+	ctx.context.current_source_file = source_file.id;
 
 	if (ctx.lexer.tokens.last()!!.kind != EOF)
 	{

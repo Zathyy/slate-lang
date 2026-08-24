@@ -34,7 +34,7 @@ fn bool define(Scope* scope, String name, Decl* decl)
 <*
  Look up a declaration by walking up the parent scope chain.
 *>
-fn Decl* lookup(Scope* scope, String name)
+fn Decl* lookup(SemaContext* ctx, Scope* scope, String name)
 {
     Scope* current = scope;
     while (current != null)
@@ -43,6 +43,19 @@ fn Decl* lookup(Scope* scope, String name)
         {
             return current.symbols.get(name)!!;
         }
+
+		foreach (String import_path : current.imports)
+		{
+		    Module* imported_mod = ctx.context.modules.get(import_path) ?? null;
+		    if (imported_mod != null && imported_mod.scope != null)
+		    {
+		        if (imported_mod.scope.symbols.has_key(name))
+		        {
+		            return imported_mod.scope.symbols.get(name)!!;
+		        }
+		    }
+		}
+
         current = current.parent;
     }
 
@@ -52,9 +65,9 @@ fn Decl* lookup(Scope* scope, String name)
 <*
  Check if a symbol exists anywhere in the scope hierarchy.
 *>
-fn bool Scope.has(Scope* scope, String name)
+fn bool has(SemaContext* ctx, Scope* scope, String name)
 {
-    return scope::lookup(scope, name) != null;
+    return scope::lookup(ctx, scope, name) != null;
 }
 
 fn void add_import(Scope* scope, String name)
@@ -80,4 +93,16 @@ fn String Scope.get_import(Scope* scope, String name) => @pool()
     }
 
     return "";
+}
+
+fn Scope* find_innermost_scope(Scope* current, Range target_range)
+{
+    foreach (Scope* child : current.children)
+    {
+        if (child.range.contains_range(target_range))
+        {
+            return find_innermost_scope(child, target_range);
+        }
+    }
+    return current;
 }

@@ -69,9 +69,10 @@ fn bool process(CompilerContext* context, String buffer, String path) => @pool()
 {
 	diagnostics::log_info("processing file: %s", path);
 	Lexer* lexer = lexer::create(context, buffer);
+	SourceFile* source = source_file::create(context, lexer, path);
+
 	lexer::tokenize(lexer);
 
-	SourceFile* source = source_file::create(context, lexer, path);
 	ParseContext* parse_ctx = parser::create(context);
 
 	if (!parser::parse(parse_ctx, source))

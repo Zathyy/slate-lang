@@ -287,7 +287,7 @@ fn Token lex_identifier(Lexer* self)
 	if (length <= 0)
 	{
 		diagnostics::error(self.context,
-		{ start, self.location },
+		{ start, self.location, self.context.current_source_file },
 		"Length of identifier was less or eq to 0");
 		return self.emit_range(ERROR, start_index);
 	}
@@ -432,7 +432,7 @@ fn Token lex_hex_array(Lexer* self)
 			continue;
 		}
 
-		diagnostics::error(self.context, { start ,self.location_at(self.index) }, "[Lexer]: Unexpected character '%c'", c);
+		diagnostics::error(self.context, { start ,self.location_at(self.index), self.context.current_source_file }, "[Lexer]: Unexpected character '%c'", c);
 		return {
 			.kind = ERROR,
 			.value = self.get_string(start_index, self.index - start_index),
@@ -538,6 +538,7 @@ fn void tokenize(Lexer* lexer)
 			continue;
 		}
 		diagnostics::log_debug("Added token: %s - %s", t.kind.description, t.value);
+		t.range.file_id = lexer.context.current_source_file;
 		lexer.tokens.push(t);
 		if (t.kind == EOF) break;
 	}
@@ -695,7 +696,7 @@ fn Token next(Lexer* lexer)
 
 			if (lexer.current != 0)
 			{
-				diagnostics::error(lexer.context, { lexer.location, lexer.location },
+				diagnostics::error(lexer.context, { lexer.location, lexer.location, lexer.context.current_source_file },
 					"Unexpected character: %c", lexer.current);
 
 				Token err = lexer.emit(ERROR, "");

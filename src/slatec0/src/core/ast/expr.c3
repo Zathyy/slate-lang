@@ -32,7 +32,6 @@ struct TypeExpr
 {
 	inline Expr node;
 	TypeExprKind type_kind;
-	bool is_const;
 
 	union
 	{
@@ -105,6 +104,13 @@ struct LiteralExpr
 	inline Expr node;
 	LiteralKind lit_kind;
 	String value;
+
+	union resolved
+	{
+		ulong integer;
+		double _float;
+		bool boolean;
+	}
 }
 
 struct UnaryExpr

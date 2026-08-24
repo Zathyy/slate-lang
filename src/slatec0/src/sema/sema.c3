@@ -8,10 +8,16 @@ struct SemaContext
 {
 	CompilerContext* context;
 	Allocator alloc;
-	Scope* scope;
 	String current_module;
 	SourceFile* current_file;
 	HashMap{NodeID, Type*} node_types;
+	HashMap{void*, Scope*} node_scopes;
+
+	struct transient
+	{
+		Type* return_type;
+		Scope* current_scope;
+	}
 }
 
 fn SemaContext* create(CompilerContext* context)
@@ -21,7 +27,7 @@ fn SemaContext* create(CompilerContext* context)
 	ctx.context = context;
 	ctx.alloc = context.alloc;
 	ctx.node_types.init(context.alloc);
-	ctx.scope = scope::create(ctx.alloc, {});
+	ctx.node_scopes.init(context.alloc);
 
 	return ctx;
 }
@@ -40,17 +46,15 @@ fn void run_pipeline(SemaContext* ctx)
 {
 	foreach (SourceFile* sf : ctx.context.files.value_iter())
 	{
-		sf.sema.scope = scope::create(ctx.alloc, {});
+		Range range = source_file::get_range(sf);
+		sf.sema.scope = scope::create(ctx.alloc, range);
 	}
 
-	// Pass 1: Index all declarations & resolve candidate signatures
     index_pass(ctx);
 
     resolve_decls_pass(ctx);
 
-    //// Pass 3: Resolve global variable declarations & types
     //variable_pass(ctx);
 
-    // Pass 4: Typecheck function bodies and local statements
     body_pass(ctx);
 }

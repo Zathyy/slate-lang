@@ -15,7 +15,7 @@ fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
 
 	TypeExpr* current_type = ctx.ast.alloc_node(TypeExpr, start);
 	defer current_type.range.end = ctx.peek(-1).range.end;
-	current_type.is_const = consume(ctx, CONST);
+	current_type.flags.is_const = consume(ctx, CONST);
 
 	// Check for built-in primitive keywords
 	if (ctx.current.kind.is_primitive())
@@ -53,7 +53,7 @@ fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
 		{
 			advance(ctx);
 
-			TypeExpr* ptr_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end });
+			TypeExpr* ptr_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end, ctx.context.current_source_file });
 
 			ptr_node.type_kind = TYPE_POINTER;
 			ptr_node.modify.base = current_type; // The previous node becomes the base
@@ -66,7 +66,7 @@ fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
 		{
 			advance(ctx);
 
-			TypeExpr* arr_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end });
+			TypeExpr* arr_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end, ctx.context.current_source_file });
 
 			if (ctx.is(RBRACKET))
 			{
@@ -99,7 +99,7 @@ fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
 		// Handle Generics: '{' ... '}'
 		if (t.kind == LESS)
 		{
-			TypeExpr* gen_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end });
+			TypeExpr* gen_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end, ctx.context.current_source_file });
 
 			gen_node.type_kind = TYPE_GENERIC;
 			gen_node.generic.base = current_type;
@@ -152,7 +152,7 @@ fn Node* parse_binary_expr(ParseContext* ctx, Node* left, Precedence prec)
 	advance(ctx);
 	Node* right = parse_expr(ctx);
 
-	BinaryExpr* node = ctx.ast.alloc_node(BinaryExpr, { start.start, right.range.end });
+	BinaryExpr* node = ctx.ast.alloc_node(BinaryExpr, { start.start, right.range.end, ctx.context.current_source_file });
 	node.left = left;
 	node.right = right;
 	node.op = core::binaryop_from_token(kind);

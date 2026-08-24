@@ -3,6 +3,8 @@ module slate::core::mod;
 import slate::core::ast;
 import slate::core::diagnostics;
 
+import slate::sema::scope;
+
 import std::io;
 
 import llvm;
@@ -27,6 +29,7 @@ fn Module* create(CompilerContext* ctx, String name)
 	mod.nodes.init(ctx.alloc);
 	mod.module_decls.init(ctx.alloc);
 	mod.node_map.init(ctx.alloc);
+	mod.scope = scope::create(ctx.alloc, {});
 
 	ctx.modules.set(name, mod);
 

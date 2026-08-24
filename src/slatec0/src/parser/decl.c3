@@ -401,7 +401,7 @@ fn Node* parse_enum_decl(ParseContext* ctx) => @pool()
 fn Node* parse_typedef_decl(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
-	diagnostics::log_debug("parse_global_decl");
+	diagnostics::log_debug("parse_typedef_decl");
 	TypedefDecl* node = ctx.ast.alloc_node(TypedefDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 
@@ -411,7 +411,7 @@ fn Node* parse_typedef_decl(ParseContext* ctx)
 
 	expect(ctx, node, EQ);
 
-	node.base_type = parse_type(ctx);
+	node.base_type = parse_type_expr(ctx);
 
 	expect(ctx, node, EOS);
 
@@ -422,6 +422,7 @@ fn Node* parse_typedef_decl(ParseContext* ctx)
 fn Node* parse_param_decl(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
+	diagnostics::log_debug("parse_param_decl");
 
 	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
@@ -442,11 +443,6 @@ fn Node* parse_param_decl(ParseContext* ctx)
 	if (parsed_type && parsed_type.kind == ERROR)
 	{
 		node.flags.has_error = true;
-	}
-	if (consume(ctx, ELLIPSIS))
-	{
-		has_ellipsis_after_type = true;
-		node.var_flags.is_variadic = true;
 	}
 
 	node.type = parsed_type;

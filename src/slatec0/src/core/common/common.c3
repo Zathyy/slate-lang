@@ -2,10 +2,13 @@ module slate::core;
 
 import std::io;
 
+typedef FileID = inline ushort;
+
 struct Range (Printable)
 {
 	Location start;
 	Location end;
+	FileID file_id;
 }
 
 fn sz? Range.to_format(Range* self, Formatter* fmt) @dynamic

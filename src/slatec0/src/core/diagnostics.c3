@@ -1,5 +1,7 @@
 module slate::core::diagnostics;
 
+import slate::core::source_file;
+
 import std::io;
 import std::math;
 
@@ -21,7 +23,12 @@ fn void diagnose(
 	String fmt,
 	args...) => @pool()
 {
-	SourceFile* sf = ctx.current_source_file;
+	SourceFile* sf = source_file::get(ctx, range.file_id);
+	if (!sf)
+	{
+		log_error("No source file found for FileID: %s", range.file_id);
+		return;
+	}
 
 	Ansi color;
 	switch (level)
@@ -138,6 +145,7 @@ macro void error(CompilerContext* ctx, Range range, String fmt, ...)
 {
 	log_error("Error happened here");
 	diagnose(ctx, range, ERROR, fmt, ...$vaarg);
+	ctx.error_count++;
 }
 
 

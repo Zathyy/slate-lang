@@ -18,7 +18,7 @@ fn Decl* resolve_path(SemaContext* ctx, Scope* current_scope, String path) => @p
 	sz last_sep = path.rindex_of("::") ?? -1;
 	if (last_sep == -1)
 	{
-		return scope::lookup(current_scope, path);
+		return scope::lookup(ctx, current_scope, path);
 	}
 	diagnostics::log_error("[resolve_path]: last_sep: %d", last_sep);
 	diagnostics::log_error("[resolve_path]: path: %s", path);
@@ -57,34 +57,40 @@ fn uint align_up(uint value, uint alignment) @inline
 	return (value + alignment - 1) & ~(alignment - 1);
 }
 
-fn Type* resolve_type_by_name(SemaContext* ctx, String name)
+fn Type* resolve_type_by_name(SemaContext* ctx, Scope* scope, String name)
 {
-    // Check built-ins or cached primitive types in Lookup ("i32", "u8", "void", etc.)
-    if (Type* t = ctx.context.lookup.types.get(name) ?? null)
-    {
-        return t;
-    }
+	// Check built-ins or cached primitive types in Lookup ("i32", "u8", "void", etc.)
+	if (Type* t = ctx.context.lookup.types.get(name) ?? null)
+	{
+		return t;
+	}
 
-    //  Resolve via Scope or qualified module path ("MyStruct", "std::core::String")
-    if (Decl* decl = resolve_path(ctx, ctx.scope, name))
-    {
-        if (decl.resolved_type != null)
-        {
-            return decl.resolved_type;
-        }
+	//  Resolve via Scope or qualified module path ("MyStruct", "std::core::String")
+	if (Decl* decl = resolve_path(ctx, scope, name))
+	{
+		if (decl.node.kind == TYPEDEF_DECL)
+		{
+			TypedefDecl* t_decl = (TypedefDecl*)decl;
+			return resolve_type(ctx, scope, t_decl.base_type);
+		}
 
-        // Fallback to node_types table if stored separately on the AST node
-        if (Type* t = get_type(ctx, (Node*)decl) ?? null)
-        {
-            return t;
-        }
-    }
+		if (decl.resolved_type != null)
+		{
+			return decl.resolved_type;
+		}
 
-    diagnostics::log_error("[Sema]: Unknown type identifier '%s'", name);
-    return null;
+		// Fallback to node_types table if stored separately on the AST node
+		if (Type* t = get_type(ctx, (Node*)decl) ?? null)
+		{
+			return t;
+		}
+	}
+
+	diagnostics::log_error("[Sema]: Unknown type identifier '%s'", name);
+	return null;
 }
 
-fn Type* resolve_type(SemaContext* ctx, Node* type)
+fn Type* resolve_type(SemaContext* ctx, Scope* scope, Node* type)
 {
 	if (type == null) return null;
 
@@ -93,8 +99,8 @@ fn Type* resolve_type(SemaContext* ctx, Node* type)
 		case IDENT_EXPR:
 		{
 			IdentExpr* ident = type.as(IdentExpr);
-            String name = ident.ident.text;
-            return resolve_type_by_name(ctx, name);
+			String name = ident.ident.text;
+			return resolve_type_by_name(ctx, scope, name);
 		}
 		case TYPE_EXPR:
 		{
@@ -104,18 +110,18 @@ fn Type* resolve_type(SemaContext* ctx, Node* type)
 				case TYPE_IDENTIFIER:
 				{
 					String name = type_expr.unresolved.name.text;
-					return resolve_type_by_name(ctx, name);
+					return resolve_type_by_name(ctx, scope, name);
 				}
 
 				case TYPE_POINTER:
 				{
-					Type* base = resolve_type(ctx, type_expr.modify.base);
+					Type* base = resolve_type(ctx, scope, type_expr.modify.base);
 					return lookup::get_or_create_pointer(ctx.context.lookup, base);
 				}
 
 				case TYPE_ARRAY:
 				{
-					Type* elem = resolve_type(ctx, type_expr.array.base);
+					Type* elem = resolve_type(ctx, scope, type_expr.array.base);
 
 					ulong len = 0;
 					if (type_expr.array.len_expr != null)
@@ -124,6 +130,12 @@ fn Type* resolve_type(SemaContext* ctx, Node* type)
 					}
 
 					return lookup::get_or_create_array(ctx.context.lookup, elem, len);
+				}
+
+				case TYPE_SLICE:
+				{
+					Type* elem = resolve_type(ctx, scope, type_expr.array.base);
+					return lookup::get_or_create_slice(ctx.context.lookup, elem);
 				}
 
 				default:

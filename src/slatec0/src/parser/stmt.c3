@@ -20,6 +20,8 @@ fn Node* parse_stmt(ParseContext* ctx)
 	{
 		case LBRACE:
 			return parse_compound_stmt(ctx);
+		case RETURN:
+			return parse_return_stmt(ctx);
 		case IDENT:
 			return parse_ident_stmt(ctx);
 		case VAR:
@@ -111,4 +113,26 @@ fn Node* parse_ident_stmt(ParseContext* ctx)
     diagnostics::error(ctx.context, expr.range, "Expression statement has no side effect (Rule A violation)");
     expr.flags.has_error = true;
     return expr;
+}
+
+fn Node* parse_return_stmt(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	advance(ctx);
+
+	ReturnStmt* node = ctx.ast.alloc_node(ReturnStmt, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	if (!ctx.is(EOS))
+	{
+		node.expr = parse_expr(ctx);
+	}
+
+	if (!consume(ctx, EOS))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected ';'");
+		node.flags.has_error = true;
+	}
+
+	return (Node*)node;
 }

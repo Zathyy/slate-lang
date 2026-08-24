@@ -12,7 +12,8 @@
   "linker-search-paths": [ "C:/LLVM/lib" ],
   "targets": {
     "slatec": {
-      "type": "executable"
+      "type": "executable",
+      "link-args-override": ["/STACK:8388608"]
     }
   },
   "cpu": "generic",

@@ -11,10 +11,11 @@ struct CompilerContext
 	LLVMTargetMachineRef llvm_target;
 	Allocator alloc;
 	Lookup* lookup;
-	HashMap{String, SourceFile*} files;
+	HashMap{FileID::inner, SourceFile*} files;
 	HashMap{String, Module*} modules;
-	SourceFile* current_source_file;
+	FileID current_source_file;
 	Target target;
+	uint error_count;
 }
 
 struct Lookup
@@ -22,6 +23,7 @@ struct Lookup
 	HashMap{String, Type*} types;
 	HashMap{void*, Type*} pointer_cache;
 	HashMap{TypeArray, Type*} array_cache;
+	HashMap{void*, Type*} slice_cache;
 	Allocator alloc;
 	Target target;
 }
@@ -32,6 +34,7 @@ struct SourceFile
 	String path;
 	String content;
 	Ast ast;
+	FileID id;
 
 	struct sema
 	{
@@ -46,6 +49,7 @@ struct Module
 	HashMap{NodeID, Node*} node_map;
 	List{Node*} nodes;
 	List{ModuleDecl*} module_decls;
+	Scope* scope;
 }
 
 struct ParseContext
@@ -85,6 +89,8 @@ struct Type
 	String name;
 	LLVMTypeRef llvm_type;
 
+	Type* canonical;
+
 	union data
 	{
 		Decl* decl;
@@ -98,7 +104,7 @@ struct Type
 		}
 
         Type* ptr;
-
+        Type* slice;
         TypeArray array;
 	}
 }
