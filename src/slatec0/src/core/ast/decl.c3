@@ -12,6 +12,7 @@ struct ModuleDecl
 	inline Decl node;
 	Node* path;
 	NodeArray attributes;
+	List{NodeID} nodes;
 }
 
 struct ImportDecl

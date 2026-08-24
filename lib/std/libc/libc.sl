@@ -1,3 +1,4 @@
+[feature(LIBC)]
 module std::libc;
 
 extern fn __errno_location() -> i32*;

@@ -10,6 +10,7 @@ fn Lookup* create(CompilerContext* context)
 
 	Allocator alloc = context.alloc;
 
+	lookup.builtin_types.init(alloc);
 	lookup.types.init(alloc);
 	lookup.pointer_cache.init(alloc);
 	lookup.array_cache.init(alloc);
@@ -21,7 +22,7 @@ fn Lookup* create(CompilerContext* context)
 	return lookup;
 }
 
-fn Type* register_type(Lookup* lookup, Allocator alloc, String name, Decl* decl, TypeKind kind)
+fn Type* register_type(Lookup* lookup, Allocator alloc, String qname, String name, Decl* decl, TypeKind kind)
 {
 	Type* type = alloc::new(alloc, Type);
 
@@ -34,6 +35,8 @@ fn Type* register_type(Lookup* lookup, Allocator alloc, String name, Decl* decl,
     {
         type.canonical = type;
     }
+
+    lookup.types.set(qname, type);
 
 	return type;
 }
@@ -68,7 +71,7 @@ fn void create_builtin(Lookup* lookup, String name,
 	type.data.builtin.abi_alignment = (char)align.align;
 	type.data.builtin.pref_alignment = (char)align.pref_align;
 
-	lookup.types.set(name, type);
+	lookup.builtin_types.set(name, type);
 }
 
 fn void init_builtin_types(Lookup* lookup)
@@ -196,20 +199,20 @@ fn Type* primitive_type(Lookup* self, TypeKind kind)
 {
 	switch (kind)
 	{
-		case TYPE_VOID: return self.types.get("void")!!;
-		case TYPE_BOOL: return self.types.get("bool")!!;
-		case TYPE_I8:   return self.types.get("i8")!!;
-		case TYPE_I16:  return self.types.get("i16")!!;
-		case TYPE_I32:  return self.types.get("i32")!!;
-		case TYPE_I64:  return self.types.get("i64")!!;
-		case TYPE_U8:   return self.types.get("u8")!!;
-		case TYPE_U16:  return self.types.get("u16")!!;
-		case TYPE_U32:  return self.types.get("u32")!!;
-		case TYPE_U64:  return self.types.get("u64")!!;
-		case TYPE_F16:  return self.types.get("f16")!!;
-		case TYPE_F32:  return self.types.get("f32")!!;
-		case TYPE_F64:  return self.types.get("f64")!!;
-		case TYPE_USIZE:return self.types.get("usize")!!;
+		case TYPE_VOID: return self.builtin_types.get("void")!!;
+		case TYPE_BOOL: return self.builtin_types.get("bool")!!;
+		case TYPE_I8:   return self.builtin_types.get("i8")!!;
+		case TYPE_I16:  return self.builtin_types.get("i16")!!;
+		case TYPE_I32:  return self.builtin_types.get("i32")!!;
+		case TYPE_I64:  return self.builtin_types.get("i64")!!;
+		case TYPE_U8:   return self.builtin_types.get("u8")!!;
+		case TYPE_U16:  return self.builtin_types.get("u16")!!;
+		case TYPE_U32:  return self.builtin_types.get("u32")!!;
+		case TYPE_U64:  return self.builtin_types.get("u64")!!;
+		case TYPE_F16:  return self.builtin_types.get("f16")!!;
+		case TYPE_F32:  return self.builtin_types.get("f32")!!;
+		case TYPE_F64:  return self.builtin_types.get("f64")!!;
+		case TYPE_USIZE:return self.builtin_types.get("usize")!!;
 		default: unreachable("Not a primitive type");
 	}
 }

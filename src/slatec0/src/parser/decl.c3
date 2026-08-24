@@ -18,6 +18,7 @@ fn Node* parse_module_decl(ParseContext* ctx)
 	ModuleDecl* node = ctx.ast.alloc_node(ModuleDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 	node.path = parse_path(ctx);
+	node.nodes.init(ctx.allocator);
 
 	if (!node.path)
 	{
@@ -97,26 +98,18 @@ fn NodeArray parse_attributes(ParseContext* ctx) => @pool()
         while (!ctx.eof() && !ctx.is(RBRACKET))
         {
             AttributeDecl* node = ctx.ast.alloc_node(AttributeDecl, start);
-
             AttributeKind attr_kind;
-            switch OUTER: (ctx.current.kind)
-            {
-            	case IDENT:
-		            switch (ctx.current.value)
-					{
-					    case "private":    attr_kind = PRIVATE; break OUTER;
-					    case "nodiscard":  attr_kind = NODISCARD; break OUTER;
-					    case "deprecated": attr_kind = DEPRECATED; break OUTER;
-					    default:
-							attr_kind = CUSTOM;
-							break OUTER;
-					}
-				case IF: attr_kind = IF; break;
-				default:
-					diagnostics::error(ctx.context, ctx.current.range, "Expected attribute name");
-					skip_until(ctx, { COMMA, RBRACKET }, true);
-					continue;
-            }
+
+            switch (ctx.current.value)
+			{
+			    case "private":    attr_kind = PRIVATE; break;
+			    case "nodiscard":  attr_kind = NODISCARD; break;
+			    case "deprecated": attr_kind = DEPRECATED; break;
+				case "feature":    attr_kind = FEATURE; break;
+			    default:
+					attr_kind = CUSTOM;
+					break;
+			}
 
             node.attr_kind = attr_kind;
 

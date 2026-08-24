@@ -287,6 +287,7 @@ fn Node* parse_infix(ParseContext* ctx, Node* left, Precedence rbp)
 		case LESS:
 		case LESS_EQ:
 		case AMP:
+		case AND:
 		case BIT_AND_ASSIGN:
 		case NOT_EQUAL:
 		case RSHIFT_ASSIGN:

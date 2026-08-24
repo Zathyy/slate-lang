@@ -13,6 +13,7 @@ struct CompilerContext
 	Lookup* lookup;
 	HashMap{FileID::inner, SourceFile*} files;
 	HashMap{String, Module*} modules;
+	List{String} features;
 	FileID current_source_file;
 	Target target;
 	uint error_count;
@@ -20,6 +21,7 @@ struct CompilerContext
 
 struct Lookup
 {
+	HashMap{String, Type*} builtin_types;
 	HashMap{String, Type*} types;
 	HashMap{void*, Type*} pointer_cache;
 	HashMap{TypeArray, Type*} array_cache;

@@ -8,7 +8,7 @@ struct SemaContext
 {
 	CompilerContext* context;
 	Allocator alloc;
-	String current_module;
+	Module* current_module;
 	SourceFile* current_file;
 	HashMap{NodeID, Type*} node_types;
 	HashMap{void*, Scope*} node_scopes;

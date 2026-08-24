@@ -18,6 +18,7 @@ bitstruct NodeFlags : ushort
 	bool is_const;
 	bool has_attributes;
 	bool has_error;
+	bool is_disabled; // disabled means no codegen
 }
 
 struct Node

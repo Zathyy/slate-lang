@@ -35,6 +35,7 @@ fn CompilerContext* create(Target target = {})
 
 	ctx.files.init(ctx.alloc);
 	ctx.modules.init(ctx.alloc);
+	ctx.features.init(ctx.alloc);
 
 	if (target.arch == UNKNOWN)
 	{
@@ -47,6 +48,10 @@ fn CompilerContext* create(Target target = {})
 	}
 	ctx.target = target;
 	ctx.target.layout = arch::get_platform_layout(target.os, target.arch);
+
+	ctx.features.push("WIN32");
+	ctx.features.push("X86_64");
+	ctx.features.push("LIBC");
 
 	ctx.lookup = lookup::create(ctx);
 

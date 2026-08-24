@@ -257,7 +257,7 @@ enum AttributeKind : char
 	PRIVATE,
 	DEPRECATED,
 	NODISCARD,
-	IF,
+	FEATURE,
 }
 
 enum Visibility : char

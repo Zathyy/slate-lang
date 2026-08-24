@@ -60,7 +60,7 @@ fn uint align_up(uint value, uint alignment) @inline
 fn Type* resolve_type_by_name(SemaContext* ctx, Scope* scope, String name)
 {
 	// Check built-ins or cached primitive types in Lookup ("i32", "u8", "void", etc.)
-	if (Type* t = ctx.context.lookup.types.get(name) ?? null)
+	if (Type* t = ctx.context.lookup.builtin_types.get(name) ?? null)
 	{
 		return t;
 	}

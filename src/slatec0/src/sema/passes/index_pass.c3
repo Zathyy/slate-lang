@@ -36,23 +36,32 @@ fn void index_pass(SemaContext* ctx)
 fn void index_source_file(SemaContext* ctx, SourceFile* sf)
 {
 	Module* mod;
+	ModuleDecl* mod_decl;
 	Scope* section;
+	bool has_module_header = false;
+	bool section_enabled = false;
 
 	foreach (Node* node : sf.ast.statements)
 	{
 		if (!node.is_valid()) continue;
 
-		if (!mod && node.kind != MODULE_DECL)
-		{
-			diagnostics::error(ctx.context, node.range, "Expected module to be the first node except for attributes");
-			return;
-		}
-
 		if (node.kind == MODULE_DECL)
 		{
-			ModuleDecl* decl = node.as(ModuleDecl);
-			PathAtom* atom = decl.path.as(PathAtom);
+			has_module_header = true;
+			mod_decl = node.as(ModuleDecl);
+			PathAtom* atom = mod_decl.path.as(PathAtom);
+
+			if (!is_node_enabled(ctx, mod_decl))
+			{
+				diagnostics::log_info("[index]: disabling module section: %s", atom.path.text);
+                section_enabled = false;
+                continue; // Skip rest of setup for this section
+			}
+
+			section_enabled = true;
+
 			mod = mod::create(ctx.context, atom.path.text);
+			ctx.current_module = mod;
 			section = scope::create(ctx.alloc, node.range, mod.scope);
 
 			foreach (String path : DEFAULT_IMPORTS)
@@ -63,8 +72,19 @@ fn void index_source_file(SemaContext* ctx, SourceFile* sf)
             continue;
 		}
 
+		if (!has_module_header)
+        {
+            diagnostics::error(ctx.context, node.range, "Expected module declaration before statements");
+            return;
+        }
+
+        if (!section_enabled) continue;
+
+        if (!is_node_enabled(ctx, (Decl*)node)) continue;
+
 		ctx.node_scopes.set(node, section);
 		mod::add_node(mod, node);
+		mod_decl.nodes.push(node.id);
 
 		switch (node.kind)
 		{
@@ -114,9 +134,12 @@ fn void index_struct_decl(SemaContext* ctx, Scope* scope, StructDecl* s)
 
 	diagnostics::log_info("Defined struct: %s", decl.name.text);
 
+	String qname = mod::get_qname(ctx.alloc, ctx.current_module, decl.name.text);
+
 	Type* struct_type = lookup::register_type(
 		ctx.context.lookup,
 		ctx.alloc,
+		qname,
 		decl.name.text,
 		decl,
 		TYPE_STRUCT
@@ -137,9 +160,12 @@ fn void index_typedef_decl(SemaContext* ctx, Scope* scope, TypedefDecl* td)
 
 	diagnostics::log_info("Defined typedef: %s", decl.name.text);
 
+	String qname = mod::get_qname(ctx.alloc, ctx.current_module, decl.name.text);
+
 	Type* typedef_type = lookup::register_type(
 		ctx.context.lookup,
 		ctx.alloc,
+		qname,
 		decl.name.text,
 		decl,
 		TYPE_ALIAS
@@ -161,9 +187,12 @@ fn void index_function_decl(SemaContext* ctx, Scope* scope, FnDecl* f)
 
 	diagnostics::log_info("Defined function: %s", decl.name.text);
 
+	String qname = mod::get_qname(ctx.alloc, ctx.current_module, decl.name.text);
+
 	Type* fn_type = lookup::register_type(
 		ctx.context.lookup,
 		ctx.alloc,
+		qname,
 		decl.name.text,
 		decl,
 		TYPE_FN
@@ -195,9 +224,12 @@ fn void index_enum_decl(SemaContext* ctx, Scope* scope, Decl* decl)
 
 	diagnostics::log_info("Defined enum: %s", decl.name.text);
 
+	String qname = mod::get_qname(ctx.alloc, ctx.current_module, decl.name.text);
+
 	Type* enum_type = lookup::register_type(
 		ctx.context.lookup,
 		ctx.alloc,
+		qname,
 		decl.name.text,
 		decl,
 		TYPE_ENUM
