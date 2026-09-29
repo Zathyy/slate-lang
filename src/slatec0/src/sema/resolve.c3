@@ -90,61 +90,54 @@ fn Type* resolve_type_by_name(SemaContext* ctx, Scope* scope, String name)
 	return null;
 }
 
-fn Type* resolve_type(SemaContext* ctx, Scope* scope, Node* type)
+fn Type* resolve_type(SemaContext* ctx, Scope* scope, TypeDescriptor* type)
 {
 	if (type == null) return null;
 
-	switch (type.kind)
+	switch (type.type_kind)
 	{
-		case IDENT_EXPR:
+		case TYPE_IDENTIFIER:
 		{
-			IdentExpr* ident = type.as(IdentExpr);
-			String name = ident.ident.text;
+			if (type.unresolved.name == null) return null;
+			String name = type.unresolved.name.text;
+			if (!name) return null;
+			if (name.len == 0) return null;
 			return resolve_type_by_name(ctx, scope, name);
 		}
-		case TYPE_EXPR:
+
+		case TYPE_POINTER:
 		{
-			TypeExpr* type_expr = type.as(TypeExpr);
-			switch (type_expr.type_kind)
-			{
-				case TYPE_IDENTIFIER:
-				{
-					String name = type_expr.unresolved.name.text;
-					return resolve_type_by_name(ctx, scope, name);
-				}
-
-				case TYPE_POINTER:
-				{
-					Type* base = resolve_type(ctx, scope, type_expr.modify.base);
-					return lookup::get_or_create_pointer(ctx.context.lookup, base);
-				}
-
-				case TYPE_ARRAY:
-				{
-					Type* elem = resolve_type(ctx, scope, type_expr.array.base);
-
-					ulong len = 0;
-					if (type_expr.array.len_expr != null)
-					{
-						len = eval_const_int(ctx, type_expr.array.len_expr);
-					}
-
-					return lookup::get_or_create_array(ctx.context.lookup, elem, len);
-				}
-
-				case TYPE_SLICE:
-				{
-					Type* elem = resolve_type(ctx, scope, type_expr.array.base);
-					return lookup::get_or_create_slice(ctx.context.lookup, elem);
-				}
-
-				default:
-					diagnostics::log_error("[Sema]: Unsupported TypeExpr kind");
-					return null;
-			}
+			Type* base = resolve_type(ctx, scope, type.modify.base);
+			return lookup::get_or_create_pointer(ctx.context.lookup, base);
 		}
+
+		case TYPE_REF:
+		{
+			Type* base = resolve_type(ctx, scope, type.modify.base);
+			return lookup::get_or_create_ref(ctx.context.lookup, base);
+		}
+
+		case TYPE_ARRAY:
+		{
+			Type* elem = resolve_type(ctx, scope, type.array.base);
+
+			ulong len = 0;
+			if (type.array.len_expr != null)
+			{
+				len = eval_const_int(ctx, type.array.len_expr);
+			}
+
+			return lookup::get_or_create_array(ctx.context.lookup, elem, len);
+		}
+
+		case TYPE_SLICE:
+		{
+			Type* elem = resolve_type(ctx, scope, type.array.base);
+			return lookup::get_or_create_slice(ctx.context.lookup, elem);
+		}
+
 		default:
-			diagnostics::log_error("Unknown type kind: %s", type.kind.description);
-			unreachable("");
+			diagnostics::log_error("[Sema]: Unsupported TypeExpr kind");
+			return null;
 	}
 }

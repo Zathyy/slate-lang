@@ -213,6 +213,7 @@ enum TokenKind : char
 	CASE,
 	CONST,
 	CONTINUE,
+	CAST,
 	DEFAULT,
 	DEFER,
 	DO,

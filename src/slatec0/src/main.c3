@@ -130,6 +130,7 @@ fn void compile(CompilerContext* context)
 
 	foreach (Module* mod : context.modules.value_iter())
 	{
+		log::info("Module: %s", mod.name);
 		if (!codegen::emit_module(cg, mod))
 		{
 			os::exit(1);

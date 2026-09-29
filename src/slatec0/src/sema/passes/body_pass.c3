@@ -34,8 +34,9 @@ fn void check_fn_body(SemaContext* ctx, Scope* parent_scope, FnDecl* fn_decl)
 
 		if (!param.name) continue;
 
-		if (!scope::define(fn_scope, param.name.text, (Decl*)param))
+		if (Decl* existing = scope::define(fn_scope, param.name.text, (Decl*)param))
 		{
+			diagnostics::note(ctx.context, existing.range, "Previous use of '%s' was here", param.name.text);
 			diagnostics::error(ctx.context, param.range, "Redefinition of parameter '%s'", param.name.text);
 		}
 	}

@@ -234,6 +234,7 @@ fn TokenKind lookup_keyword(String text)
 		case "break": return BREAK;
 		case "case": return CASE;
 		case "continue": return CONTINUE;
+		case "cast": return CAST;
 		case "default": return DEFAULT;
 		case "defer": return DEFER;
 		case "do": return DO;
@@ -783,7 +784,6 @@ fn void test_lexer() @test
 	defer context::free(context);
 	Lexer* lexer = create(context, src);
 	SourceFile* sf = source_file::create(context, lexer, "test");
-	context.current_source_file = sf;
 
 	tokenize(lexer);
 
@@ -817,7 +817,6 @@ fn void test_idents() @test
 	defer context::free(context);
 	Lexer* lexer = create(context, src);
 	SourceFile* sf = source_file::create(context, lexer, "test");
-	context.current_source_file = sf;
 
 	tokenize(lexer);
 	foreach (t : lexer.tokens)

@@ -20,15 +20,20 @@ fn Scope* create(Allocator alloc, Range range, Scope* parent = null)
 	return scope;
 }
 
-fn bool define(Scope* scope, String name, Decl* decl)
+fn Decl* define(Scope* scope, String name, Decl* decl)
 {
-    if (scope.symbols.has_key(name))
+	Scope* current = scope;
+    while (current != null)
     {
-        return false; // Collision in current scope!
+        if (current.symbols.has_key(name))
+        {
+            return current.symbols.get(name)!!; // Collision in current or outer scope!
+        }
+        current = current.parent;
     }
 
     scope.symbols.set(name, decl);
-    return true;
+    return null;
 }
 
 <*

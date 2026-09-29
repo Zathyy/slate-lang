@@ -51,10 +51,10 @@ fn LLVMTypeRef map_type(CodegenContext* gen, Type* type)
 			break;
 
 		case TYPE_POINTER:
+		case TYPE_REF:
 			// LLVM 15+ opaque pointers: all pointers are typed as `ptr` in context
 			llvm_type = llvm::pointer_type_in_context(gen.llvm_ctx, 0);
 			break;
-
 		case TYPE_ARRAY:
 				LLVMTypeRef elem_type = map_type(gen, type.data.array.base);
 				llvm_type = llvm::array_type(elem_type, (uint)type.data.array.len);
@@ -64,12 +64,20 @@ fn LLVMTypeRef map_type(CodegenContext* gen, Type* type)
 			llvm_type = map_type(gen, type.canonical);
 			break;
 		case TYPE_SLICE:
-			// A slice is layout-compatible with struct { void* ptr; usize len; }
-            LLVMTypeRef[*] fields = {
-                llvm::pointer_type_in_context(gen.llvm_ctx, 0),
-                lookup::primitive_type(gen.context.lookup, TYPE_USIZE).llvm_type
-            };
-            llvm_type = llvm::struct_type_in_context(gen.llvm_ctx, &fields, 2, 0);
+			if (gen.slice_llvm_type != null)
+            {
+                llvm_type = gen.slice_llvm_type;
+            }
+            else
+            {
+                llvm_type = llvm::struct_create_named(gen.llvm_ctx, "Slice");
+                LLVMTypeRef[*] fields = {
+                    llvm::pointer_type_in_context(gen.llvm_ctx, 0),
+                    lookup::primitive_type(gen.context.lookup, TYPE_USIZE).llvm_type
+                };
+                llvm::struct_set_body(llvm_type, &fields, 2, 0);
+                gen.slice_llvm_type = llvm_type;
+            }
             break;
 		case TYPE_STRUCT:
 			if (type.data.decl != null && type.data.decl.kind == STRUCT_DECL)
@@ -87,6 +95,15 @@ fn LLVMTypeRef map_type(CodegenContext* gen, Type* type)
 			llvm_type = llvm::int_32_type_in_context(gen.llvm_ctx);
 			break;
 	}
+
+	if (type.is_optional && type.kind != TYPE_POINTER)
+    {
+        LLVMTypeRef[2] opt_fields = {
+            llvm_type,
+            llvm::int_1_type_in_context(gen.llvm_ctx)
+        };
+        llvm_type = llvm::struct_type_in_context(gen.llvm_ctx, &opt_fields, 2, 0);
+    }
 
 	gen.type_cache.set(type, llvm_type);
 	return llvm_type;

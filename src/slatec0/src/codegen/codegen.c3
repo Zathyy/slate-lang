@@ -31,6 +31,8 @@ struct CodegenContext
 
 	ValueScope* current_scope;
 	HashMap{void*, LLVMTypeRef} type_cache;
+	HashMap{void*, LLVMTypeRef} locals;
+	LLVMTypeRef slice_llvm_type;
 
 	List{LoopBlocks} loop_stack;
 
@@ -48,9 +50,11 @@ fn CodegenContext* create(CompilerContext* context)
 
 	ctx.llvm_ctx = context.llvm_context;
 	ctx.builder = llvm::create_builder_in_context(ctx.llvm_ctx);
+	ctx.target_data = llvm::create_target_data_layout(context.llvm_target);
 
 	ctx.type_cache.init(ctx.alloc);
 	ctx.loop_stack.init(ctx.alloc);
+	ctx.locals.init(ctx.alloc);
 
 	push_scope(ctx);
 
@@ -63,6 +67,9 @@ fn bool emit_module(CodegenContext* gen, Module* ast_mod)
 		(CChar*)ast_mod.name.ptr,
 		gen.llvm_ctx
 	);
+	CChar* layout_str = llvm::copy_string_rep_of_target_data(gen.target_data);
+	llvm::set_data_layout(llvm_mod, layout_str);
+	llvm::dispose_message(layout_str);
 
 	ast_mod.llvm_module = llvm_mod;
 	gen.mod = llvm_mod;
@@ -73,6 +80,9 @@ fn bool emit_module(CodegenContext* gen, Module* ast_mod)
 		{
 			case STRUCT_DECL:
 				emit_struct_type(gen, node.as(StructDecl));
+				break;
+			case TYPEDEF_DECL:
+				emit_typedef(gen, node.as(TypedefDecl));
 				break;
 			default:
 		}
@@ -130,4 +140,30 @@ fn LLVMValueRef get_value(CodegenContext* gen, Decl* decl)
 fn void bind_value(CodegenContext* gen, Decl* decl, LLVMValueRef val)
 {
 	gen.current_scope.bindings.set(decl, val);
+}
+
+<*
+ Emits an anonymous constant global string array for compile-time initializers.
+*>
+fn LLVMValueRef emit_global_string_const(
+    CodegenContext* cg,
+    String str,
+    CChar* name = ".str")
+{
+    LLVMContextRef ctx = cg.llvm_ctx;
+
+    // Creates an i8 array constant with a trailing null terminator (\0)
+    LLVMValueRef str_val = llvm::const_string_in_context(ctx, (CChar*)str.ptr, (uint)str.len, 0);
+
+    LLVMTypeRef str_type = llvm::array_type(llvm::int_8_type_in_context(ctx), (uint)str.len + 1);
+    LLVMValueRef global_var = llvm::add_global(cg.mod, str_type, name);
+
+    llvm::set_initializer(global_var, str_val);
+    llvm::set_global_constant(global_var, 1);
+    llvm::set_linkage(global_var, PRIVATE_LINKAGE);
+    llvm::set_unnamed_addr(global_var, 1); // Enables LLVM string deduplication/merging
+
+    // Cast [N x i8]* to i8* pointer for String slice 'ptr' field
+    LLVMTypeRef i8_ptr_t = llvm::pointer_type(llvm::int_8_type_in_context(ctx), 0);
+    return llvm::const_bit_cast(global_var, i8_ptr_t);
 }

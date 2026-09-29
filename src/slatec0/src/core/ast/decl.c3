@@ -54,7 +54,7 @@ struct ErrorUnionDecl
 struct TypedefDecl
 {
 	inline Decl node;
-	Node* base_type;
+	TypeDescriptor* base_type;
 	Node* generics;
 	NodeArray attributes;
 	bool is_inline;
@@ -63,7 +63,8 @@ struct TypedefDecl
 struct FnDecl
 {
 	inline Decl node;
-	Node* ret_type;
+	TypeDescriptor* ret_type;
+	TypeDescriptor* method_type;
 	Node* body;
 	NodeArray generics;
 	NodeArray params;
@@ -81,7 +82,7 @@ struct VarDecl
 	inline Decl node;
 	VarDeclKind var_kind;
 	VarDeclFlags var_flags;
-	Node* type;
+	TypeDescriptor* type;
 	Node* init_expr;
 	Node* next;
 	NodeArray attributes;
@@ -91,7 +92,7 @@ struct EnumDecl
 {
 	inline Decl node;
 	bool is_inline_backing;
-	Node* backing_type; // optional: ":" type
+	TypeDescriptor* backing_type; // optional: ":" type
 	NodeArray assoc_params; // optional enum_param_list inside ":"
 	NodeArray variants;
 	NodeArray attributes;
@@ -108,4 +109,5 @@ struct StructDecl
 	Node* type;
 	Node* next;
 	NodeArray attributes;
+	NodeArray generics;
 }

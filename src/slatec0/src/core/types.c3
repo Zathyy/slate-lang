@@ -24,6 +24,7 @@ struct Lookup
 	HashMap{String, Type*} builtin_types;
 	HashMap{String, Type*} types;
 	HashMap{void*, Type*} pointer_cache;
+	HashMap{void*, Type*} ref_cache;
 	HashMap{TypeArray, Type*} array_cache;
 	HashMap{void*, Type*} slice_cache;
 	Allocator alloc;
@@ -86,8 +87,10 @@ struct Type
 {
 	TypeKind kind;
 	ResolveStatus status;
+	bool is_optional;
 	uint size;
 	uint alignment;
+	uint type_id;
 	String name;
 	LLVMTypeRef llvm_type;
 

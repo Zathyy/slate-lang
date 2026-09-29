@@ -182,19 +182,10 @@ fn Node* parse_prefix_expr(ParseContext* ctx)
 {
 	Token t = ctx.current;
 
-	if (t.kind.is_primitive())
-	{
-		return parse_type_expr(ctx);
-	}
-
 	switch (t.kind)
 	{
 		case IDENT:
 	    {
-			if (is_type_start_lookahead(ctx))
-            {
-                return parse_type_expr(ctx);
-            }
 	        advance(ctx);
 	        IdentExpr* id = ctx.ast.alloc_node(IdentExpr, t.range);
 	        id.ident = ctx.ident(t);
@@ -215,6 +206,17 @@ fn Node* parse_prefix_expr(ParseContext* ctx)
 			builtin.value = parse_ident(ctx);
 			return builtin;
 		}
+		case CAST:
+			return parse_cast_expr(ctx);
+		case BANG:
+		case MINUS:
+		case BIT_NOT:
+		case AMP:
+		case AND:
+		case ASTERISK:
+		case PLUSPLUS:
+		case MINUSMINUS:
+			return parse_unary_expr(ctx);
 		case STRING_LITERAL:
 		case CHAR_LITERAL:
 		case TRUE:
@@ -304,6 +306,11 @@ fn Node* parse_infix(ParseContext* ctx, Node* left, Precedence rbp)
 	        access.left = left;
 	        access.right = right;
 	        return access;
+		case PLUSPLUS:
+		case MINUSMINUS:
+		case BANG:
+		case BANGBANG:
+			return parse_post_unary_expr(ctx, left, rbp);
 		default:
 			diagnostics::error(ctx.context, ctx.current.range, "Expected expression");
 			advance(ctx);
@@ -326,12 +333,6 @@ fn Node* parse_expr_resuming_with_left(ParseContext* ctx, Node* left, Precedence
 		left = parse_infix(ctx, left, (Precedence)rbp);
 	}
 	return left;
-}
-
-// Binds namespaces (std::list) and generic args (<u8>), but stops before identifiers or assignment
-fn Node* parse_type(ParseContext* ctx)
-{
-	return parse_expr(ctx, ASSIGNMENT + 1);
 }
 
 <*

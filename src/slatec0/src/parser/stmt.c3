@@ -18,6 +18,10 @@ fn Node* parse_stmt(ParseContext* ctx)
 
 	switch (t.kind)
 	{
+		case IF:
+			return parse_if_stmt(ctx);
+		case WHILE:
+			return parse_while_stmt(ctx);
 		case LBRACE:
 			return parse_compound_stmt(ctx);
 		case RETURN:
@@ -37,6 +41,7 @@ fn Node* parse_stmt(ParseContext* ctx)
 
 	diagnostics::error(ctx.context, t.range, "Unexpected '%s' found when expecting a statement, synchronizing!", t.kind.description);
 	Node* error = ctx.ast.error(t.range);
+	advance(ctx);
 	return error;
 }
 
@@ -83,6 +88,7 @@ fn Node* parse_compound_stmt(ParseContext* ctx) => @pool()
 
 fn Node* parse_ident_stmt(ParseContext* ctx)
 {
+	Range start = ctx.current.range;
     if (is_type_decl_lookahead(ctx))
     {
         return parse_local_decl(ctx);
@@ -96,9 +102,13 @@ fn Node* parse_ident_stmt(ParseContext* ctx)
         return (Node*)ctx.ast.error(ctx.current.range);
     }
 
+    ExprStmt* stmt = ctx.ast.alloc_node(ExprStmt, start);
+    stmt.range.end = ctx.peek(-1).range.end;
+    stmt.expr_stmt = expr;
+
     if (expr.kind == NodeKind.CALL_EXPR)
     {
-        return expr;
+        return stmt;
     }
 
     if (expr.kind == NodeKind.BINARY_EXPR)
@@ -106,13 +116,22 @@ fn Node* parse_ident_stmt(ParseContext* ctx)
         BinaryExpr* bin = (BinaryExpr*)expr;
         if (is_assignment_op(bin.op))
         {
-            return expr;
+            return stmt;
+        }
+    }
+
+    if (expr.kind == NodeKind.POST_UNARY_EXPR || expr.kind == NodeKind.UNARY_EXPR)
+    {
+        UnaryExpr* un = (UnaryExpr*)expr;
+        if (un.operator == UnaryOpKind.UNARYOP_INC || un.operator == UNARYOP_DEC)
+        {
+            return stmt;
         }
     }
 
     diagnostics::error(ctx.context, expr.range, "Expression statement has no side effect (Rule A violation)");
-    expr.flags.has_error = true;
-    return expr;
+    stmt.flags.has_error = true;
+    return stmt;
 }
 
 fn Node* parse_return_stmt(ParseContext* ctx)
@@ -131,6 +150,87 @@ fn Node* parse_return_stmt(ParseContext* ctx)
 	if (!consume(ctx, EOS))
 	{
 		diagnostics::error(ctx.context, ctx.current.range, "Expected ';'");
+		node.flags.has_error = true;
+	}
+
+	return (Node*)node;
+}
+
+fn Node* parse_if_stmt(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	advance(ctx);
+	IfStmt* node = ctx.ast.alloc_node(IfStmt, start);
+	defer node.range.end = ctx.current.range.end;
+
+	if (!consume(ctx, LPAREN))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected '(' after 'if'");
+		node.flags.has_error = true;
+	}
+
+	node.condition = parse_decl_or_expr(ctx);
+
+	if (!node.condition || node.condition.flags.has_error)
+	{
+		node.flags.has_error = true;
+	}
+
+	if (!consume(ctx, RPAREN))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected ')' to close if-condition");
+		node.flags.has_error = true;
+	}
+
+	node.then_body = parse_stmt(ctx);
+	if (!node.then_body || node.then_body.flags.has_error)
+	{
+		node.flags.has_error = true;
+	}
+
+	if (consume(ctx, ELSE))
+	{
+		node.else_body = parse_stmt(ctx);
+		if (!node.else_body || node.else_body.flags.has_error)
+		{
+			node.flags.has_error = true;
+		}
+	}
+
+	return (Node*)node;
+}
+
+fn Node* parse_while_stmt(ParseContext* ctx)
+{
+	Range start = ctx.current.range;
+	advance(ctx);
+
+	WhileStmt* node = ctx.ast.alloc_node(WhileStmt, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	if (!consume(ctx, LPAREN))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected '(' to open while header");
+		node.flags.has_error = true;
+	}
+
+	node.cond = parse_decl_or_expr(ctx);
+
+	if (!consume(ctx, RPAREN))
+	{
+		diagnostics::error(ctx.context, ctx.current.range, "Expected ')' to close while header");
+		node.flags.has_error = true;
+	}
+
+	Location prev_loc = ctx.current.range.start;
+
+	node.body = parse_stmt(ctx);
+
+	Location body_loc = node.body.range.start;
+	if (node.body.kind != COMPOUND_STMT && prev_loc.line != body_loc.line)
+	{
+		diagnostics::error(ctx.context, node.body.range,
+				"Single statement after 'while' must be on the same line or in {}");
 		node.flags.has_error = true;
 	}
 

@@ -55,8 +55,17 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 				case INT:
 				{
 					lit.resolved.integer = lit.value.to_ulong() ?? 0;
-					resolved = lookup::primitive_type(ctx.context.lookup, TYPE_I32);
-					lit.resolved_type = resolved;
+
+					if (lit.resolved.integer <= int::max)
+                    {
+                        resolved = lookup::primitive_type(ctx.context.lookup, TYPE_I32);
+                    }
+                    else
+                    {
+                        resolved = lookup::primitive_type(ctx.context.lookup, TYPE_I64);
+                    }
+
+                    lit.resolved_type = resolved;
 					break;
 				}
 				case FLOAT:
@@ -83,6 +92,23 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 		case IDENT_EXPR:
 		{
 			IdentExpr* ident = expr.as(IdentExpr);
+			String name = ident.ident.text;
+		    // Look up symbol in the active scope
+		    Decl* decl = scope::lookup(ctx, ctx.transient.current_scope, ident.ident.text);
+
+		    if (decl == null)
+		    {
+		        diagnostics::error(ctx.context, expr.range,
+		            "Undeclared identifier '%s'", ident.ident.text);
+		        resolved = lookup::primitive_type(ctx.context.lookup, TYPE_VOID);
+		    }
+		    else
+		    {
+		        ident.decl = decl;
+		        resolved = decl.resolved_type;
+		    }
+
+			ident.resolved_type = resolved;
 			break;
 		}
 
@@ -91,6 +117,37 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 			BinaryExpr* bin = expr.as(BinaryExpr);
 			Type* lhs_t = check_expr(ctx, bin.left);
 			Type* rhs_t = check_expr(ctx, bin.right);
+
+			if (lhs_t != rhs_t)
+		    {
+		        if (bin.right.kind == LITERAL_EXPR && lhs_t.is_integer())
+		        {
+		            LiteralExpr* lit = bin.right.as(LiteralExpr);
+		            if (lit.lit_kind == INT)
+		            {
+						if (!lookup::fits_in_integer(lit.resolved.integer, lit.is_negative, lhs_t))
+						{
+							diagnostics::error(ctx.context, lit.range, "int literal does not fit in: %s", lhs_t.name);
+						}
+
+		                lit.resolved_type = lhs_t;
+		                rhs_t = lhs_t;
+		            }
+		        }
+		        else if (bin.left.kind == LITERAL_EXPR && rhs_t.is_integer())
+		        {
+		            LiteralExpr* lit = bin.left.as(LiteralExpr);
+		            if (lit.lit_kind == INT)
+		            {
+						if (!lookup::fits_in_integer(lit.resolved.integer, lit.is_negative, rhs_t))
+						{
+							diagnostics::error(ctx.context, lit.range, "int literal does not fit in: %s", rhs_t.name);
+						}
+		                lit.resolved_type = rhs_t;
+		                lhs_t = rhs_t;
+		            }
+		        }
+		    }
 
 			if (lhs_t != rhs_t)
 			{
@@ -142,7 +199,82 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 			}
 			break;
 		}
+		case CAST_EXPR:
+        {
+            CastExpr* cast = expr.as(CastExpr);
 
+            Type* operand_t = check_expr(ctx, cast.operand);
+            Type* target_t = resolve_type(ctx, ctx.transient.current_scope, cast.inner);
+
+            if (cast.operand != null)
+            {
+                ((Expr*)cast.operand).resolved_type = operand_t;
+            }
+
+            if (cast.inner != null)
+            {
+                cast.inner.resolved_type = target_t;
+            }
+
+            if (target_t == null)
+            {
+                diagnostics::error(ctx.context, cast.inner != null ? cast.inner.range : expr.range,
+                    "Unknown target type in cast expression");
+            }
+            else if (operand_t != null)
+            {
+                if (!is_valid_cast(operand_t, target_t))
+                {
+                    diagnostics::error(ctx.context, expr.range,
+                        "Cannot cast expression of type '%s' to '%s'",
+                        operand_t.name,
+                        target_t.name);
+                }
+            }
+
+            resolved = target_t;
+            cast.resolved_type = resolved;
+            break;
+        }
+        case POST_UNARY_EXPR:
+        {
+            PostUnaryExpr* post = expr.as(PostUnaryExpr);
+            Type* operand_t = check_expr(ctx, post.expr);
+            post.decl = operand_t.data.decl;
+
+            // Ensure operand is a valid numeric or pointer type
+            if (operand_t != null && !operand_t.is_numeric() && operand_t.kind != TYPE_POINTER)
+            {
+                diagnostics::error(ctx.context, expr.range,
+                    "Cannot increment or decrement non-numeric type '%s'", operand_t.name);
+            }
+
+            // Ensure operand is an L-value (e.g., variable, field access, index expression)
+            if (!util::is_lvalue(post.expr))
+            {
+                diagnostics::error(ctx.context, post.expr.range,
+                    "Cannot apply increment/decrement to an rvalue expression");
+            }
+
+            // Ensure the underlying variable is not const
+            if (post.expr.kind == IDENT_EXPR)
+            {
+                IdentExpr* ident = post.expr.as(IdentExpr);
+                if (ident.decl != null && ident.decl.kind == VAR_DECL)
+                {
+                    VarDecl* var_decl = (VarDecl*)ident.decl;
+                    if (var_decl.type.is_const) // or check if decl.kind == CONST_DECL
+                    {
+                        diagnostics::error(ctx.context, post.expr.range,
+                            "Cannot mutate constant variable '%s'", ident.ident.text);
+                    }
+                }
+            }
+
+            // Postfix expressions return the original type of the operand
+            resolved = operand_t;
+            break;
+        }
 		default:
 			diagnostics::error(ctx.context, expr.range, "Unsupported expression node");
 			break;
@@ -155,6 +287,11 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 fn void check_stmt(SemaContext* ctx, Scope* scope, Stmt* stmt)
 {
     if (stmt == null) return;
+
+    // Synchronize current_scope for any sub-expression checks
+    Scope* prev_scope = ctx.transient.current_scope;
+    ctx.transient.current_scope = scope;
+    defer ctx.transient.current_scope = prev_scope;
 
     switch (stmt.kind)
     {
@@ -207,8 +344,9 @@ fn void check_stmt(SemaContext* ctx, Scope* scope, Stmt* stmt)
             decl.resolved_type = declared_type;
             set_type(ctx, (Node*)decl, declared_type);
 
-            if (!scope::define(scope, decl.name.text, (Decl*)decl))
+            if (Decl* existing = scope::define(scope, decl.name.text, (Decl*)decl))
             {
+            	diagnostics::note(ctx.context, existing.range, "Previous use of '%s' was here", decl.name.text);
                 diagnostics::error(ctx.context, decl.range, "Redefinition of variable '%s'", decl.name.text);
             }
             break;

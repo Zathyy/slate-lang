@@ -3,120 +3,6 @@ module slate::parser;
 import slate::core;
 import slate::lexer;
 
-<*
- Handles primitive and named type identifiers plus postfix pointer, array,
- slice, vector, and generic type forms.
-*>
-fn Node* parse_type_expr(ParseContext* ctx, Node* path_expr = null)
-{
-	Range start = ctx.current.range;
-
-	diagnostics::log_debug("parse_type_expr");
-
-	TypeExpr* current_type = ctx.ast.alloc_node(TypeExpr, start);
-	defer current_type.range.end = ctx.peek(-1).range.end;
-	current_type.flags.is_const = consume(ctx, CONST);
-
-	// Check for built-in primitive keywords
-	if (ctx.current.kind.is_primitive())
-	{
-		Token t = ctx.current;
-		advance(ctx);
-
-		current_type.type_kind = TYPE_IDENTIFIER;
-		current_type.unresolved.name = ctx.ident(t);
-		current_type.unresolved.path = null;
-	}
-	else
-	{
-		Node* path = path_expr ? path_expr : parse_path(ctx, true);
-
-		if (ctx.is(IDENT))
-		{
-			current_type.type_kind = TYPE_IDENTIFIER;
-			current_type.unresolved.name = ctx.ident(ctx.current);
-			current_type.unresolved.path = path;
-			advance(ctx);
-		}
-		else
-		{
-			diagnostics::error(ctx.context, ctx.current.range, "Expected type identifier");
-			current_type.flags.has_error = true;
-		}
-	}
-
-	while (true)
-	{
-		Token t = ctx.current;
-
-		if (t.kind == ASTERISK)
-		{
-			advance(ctx);
-
-			TypeExpr* ptr_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end, ctx.context.current_source_file });
-
-			ptr_node.type_kind = TYPE_POINTER;
-			ptr_node.modify.base = current_type; // The previous node becomes the base
-
-			current_type = ptr_node;
-			continue;
-		}
-
-		if (t.kind == LBRACKET)
-		{
-			advance(ctx);
-
-			TypeExpr* arr_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end, ctx.context.current_source_file });
-
-			if (ctx.is(RBRACKET))
-			{
-				advance(ctx);
-				arr_node.type_kind = TYPE_SLICE;
-				arr_node.modify.base = current_type;
-			}
-			else if (ctx.is(ASTERISK) && ctx.peek(1).kind == RBRACKET)
-			{
-				advance(ctx); // Consume '*'
-				advance(ctx); // Consume ']'
-
-				arr_node.type_kind = TYPE_ARRAY;
-				arr_node.array.base = current_type;
-				arr_node.array.len_expr = null; // null represents inferred array size [*]
-			}
-			else
-			{
-				arr_node.type_kind = TYPE_ARRAY;
-				arr_node.array.base = current_type;
-				arr_node.array.len_expr = parse_expr(ctx);
-				expect(ctx, arr_node, RBRACKET);
-			}
-
-			arr_node.range.end = ctx.peek(-1).range.end;
-			current_type = arr_node;
-			continue;
-		}
-
-		// Handle Generics: '{' ... '}'
-		if (t.kind == LESS)
-		{
-			TypeExpr* gen_node = ctx.ast.alloc_node(TypeExpr, { start.start, ctx.current.range.end, ctx.context.current_source_file });
-
-			gen_node.type_kind = TYPE_GENERIC;
-			gen_node.generic.base = current_type;
-			gen_node.generic.params = parse_generics_list(ctx);
-
-			gen_node.range.end = ctx.current.range.end;
-
-			current_type = gen_node;
-			continue;
-		}
-
-		break;
-	}
-
-	return current_type;
-}
-
 fn Node* parse_literal_expr(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
@@ -156,5 +42,73 @@ fn Node* parse_binary_expr(ParseContext* ctx, Node* left, Precedence prec)
 	node.left = left;
 	node.right = right;
 	node.op = core::binaryop_from_token(kind);
+	return (Node*)node;
+}
+
+fn Node* parse_cast_expr(ParseContext* ctx)
+{
+	Range start  = ctx.current.range;
+	advance(ctx);
+
+	CastExpr* node = ctx.ast.alloc_node(CastExpr, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+
+	expect(ctx, node, LESS);
+	node.inner = parse_type(ctx);
+	expect(ctx, node, GREATER);
+
+	expect(ctx, node, LPAREN);
+	node.operand = parse_expr(ctx, UNARY);
+	expect(ctx, node, RPAREN);
+
+	return (Node*)node;
+}
+
+fn Node* parse_unary_expr(ParseContext* ctx)
+{
+	diagnostics::log_debug("parse_unary_expr");
+	Range start = ctx.current.range;
+	if (ctx.is(MINUS))
+	{
+		if (ctx.peek(1).kind == INT_LITERAL)
+		{
+			advance(ctx);
+			Node* lit = parse_expr(ctx);
+			lit.as(LiteralExpr).is_negative = true;
+			return lit;
+		}
+	}
+	UnaryExpr* node = ctx.ast.alloc_node(UnaryExpr, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+	UnaryOpKind? op  = core::unaryop_from_token(ctx.current.kind);
+	if (catch op)
+	{
+		diagnostics::error(ctx.context, ctx.current.range,"Not a unary operator (%s)", ctx.current.kind);
+	}
+	else
+	{
+		node.operator = op;
+	}
+	advance(ctx);
+	node.expr = parse_expr(ctx, UNARY);
+	return (Node*)node;
+}
+
+fn Node* parse_post_unary_expr(ParseContext* ctx, Node* left, Precedence bp)
+{
+	Range start = ctx.current.range;
+	PostUnaryExpr* node = ctx.ast.alloc_node(PostUnaryExpr, start);
+	defer node.range.end = ctx.peek(-1).range.end;
+	UnaryOpKind? op = core::unaryop_from_token(ctx.current.kind);
+	if (catch op)
+	{
+		diagnostics::error(ctx.context, ctx.current.range,"Not a unary operator (%s)", ctx.current.kind);
+	}
+	else
+	{
+		node.operator = op;
+	}
+	node.expr = left;
+	advance(ctx);
 	return (Node*)node;
 }

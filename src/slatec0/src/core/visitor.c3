@@ -91,7 +91,6 @@ fn bool visit_decls(Node* node, Node* parent, VisitorHooks hooks, void* data) @p
 		case FN_DECL:
 		{
 			FnDecl* fndecl = node.as(FnDecl);
-			if (fndecl.ret_type && !visit(fndecl.ret_type, parent, hooks, data)) return false;
 			foreach (param : fndecl.params)
 			{
 				if (!visit(param, parent, hooks, data)) return false;
@@ -119,10 +118,6 @@ fn bool visit_decls(Node* node, Node* parent, VisitorHooks hooks, void* data) @p
 		case ENUM_DECL:
 		{
 			EnumDecl* ed = node.as(EnumDecl);
-			if (ed.backing_type)
-			{
-				if (!visit(ed.backing_type, parent, hooks, data)) return false;
-			}
 			foreach (vari : ed.variants)
 			{
 				if (!visit(vari, parent, hooks, data)) return false;
@@ -136,7 +131,6 @@ fn bool visit_decls(Node* node, Node* parent, VisitorHooks hooks, void* data) @p
 		case VAR_DECL:
 		{
 			VarDecl* vardecl = node.as(VarDecl);
-			if (vardecl.type && !visit(vardecl.type, parent, hooks, data)) return false;
 			if (vardecl.init_expr && !visit(vardecl.init_expr, parent, hooks, data)) return false;
 			if (vardecl.next && !visit(vardecl.next, parent, hooks, data)) return false;
 
@@ -186,44 +180,6 @@ fn bool visit_exprs(Node* node, Node* parent, VisitorHooks hooks, void* data) @p
 			BinaryExpr* bin = node.as(BinaryExpr);
 			if (bin.left && !visit(bin.left, parent, hooks, data)) return false;
 			if (bin.right && !visit(bin.right, parent, hooks, data)) return false;
-			break;
-		}
-		case TYPE_EXPR:
-		{
-			TypeExpr* te = node.as(TypeExpr);
-			switch (te.type_kind)
-			{
-				case TYPE_IDENTIFIER:
-				{
-					// Optional module path node (e.g., the 'foo::' in 'foo::MyStruct')
-					if (te.unresolved.path && !visit(te.unresolved.path, parent, hooks, data)) return false;
-					break;
-				}
-				case TYPE_POINTER:
-				case TYPE_SLICE:
-				{
-					if (te.modify.base && !visit(te.modify.base, parent, hooks, data)) return false;
-					break;
-				}
-				case TYPE_ARRAY:
-				case TYPE_VECTOR:
-				{
-					if (te.array.base && !visit(te.array.base, parent, hooks, data)) return false;
-					if (te.array.len_expr && !visit(te.array.len_expr, parent, hooks, data)) return false;
-					break;
-				}
-				case TYPE_GENERIC:
-				{
-					if (te.generic.base && !visit(te.generic.base, parent, hooks, data)) return false;
-					foreach (param : te.generic.params)
-					{
-						if (!visit(param, parent, hooks, data)) return false;
-					}
-					break;
-				}
-				default:
-					unreachable();
-			}
 			break;
 		}
 		default:

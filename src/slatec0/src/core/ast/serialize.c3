@@ -40,16 +40,10 @@ macro void serialize(JsonOutput* output, item, int indent, int depth) @local
 			$endforeach
 			output.end_obj(indent, depth);
 
-		$case $Typeof(item) == TypeExpr*:
+		$case $Typeof(item) == TypeDescriptor*:
 			output.start_obj(indent);
 
-			output.ser_entry("kind", item.kind,   indent, depth + 1);
-			var $sw = "switch (item.kind.ordinal) {";
-			$foreach $i, $m : TypeExpr::members[^1].members:
-				$sw +++= @sprintf(`case %s: output.ser_entry("%s", item.$eval("%s"), indent, depth + 1);`, $i, $m.name, $m.name);
-			$endforeach
-			$sw +++= "default: }";
-			$expand($sw);
+			output.ser_entry("kind", item.type_kind,indent, depth + 1);
 
 			output.end_obj(indent, depth);
 

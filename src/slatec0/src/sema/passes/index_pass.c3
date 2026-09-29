@@ -12,12 +12,10 @@ import slate::core::visitor;
 //  Section Scope 1 (range: lines 1-3)
 //  ├── Imports: [zoo, std::core, ...]
 //  └── Parent -> Module Scope (foo::bar)
-//                   └── Builtin Scope
 //
 //  Section Scope 2 (range: lines 5-7)
 //  ├── Imports: [xyz, std::core, ...]
 //  └── Parent -> Module Scope (foo::bar::baz)
-//                   └── Builtin Scope
 
 const String[*] DEFAULT_IMPORTS = {
 	"std::core",
@@ -109,7 +107,6 @@ fn void index_source_file(SemaContext* ctx, SourceFile* sf)
 				index_var_decl(ctx, mod.scope, decl);
 				break;
 			case ENUM_DECL:
-				// Handle Enum registration
 				index_enum_decl(ctx, mod.scope, (Decl*)node);
 				break;
 			case TYPEDEF_DECL:
@@ -126,9 +123,10 @@ fn void index_struct_decl(SemaContext* ctx, Scope* scope, StructDecl* s)
 {
 	Decl* decl = (Decl*)s;
 
-	if (!scope::define(scope, decl.name.text, decl))
+	if (Decl* existing = scope::define(scope, decl.name.text, decl))
 	{
-		diagnostics::error(ctx.context, decl.range, "Redefinition of struct symbol in scope");
+		diagnostics::note(ctx.context, existing.range, "Other decleration was here");
+		diagnostics::error(ctx.context, decl.range, "Redefinition of struct symbol");
 		return;
 	}
 
@@ -152,8 +150,9 @@ fn void index_typedef_decl(SemaContext* ctx, Scope* scope, TypedefDecl* td)
 {
 	Decl* decl = (Decl*)td;
 
-	if (!scope::define(scope, decl.name.text, decl))
+	if (Decl* existing = scope::define(scope, decl.name.text, decl))
 	{
+		diagnostics::note(ctx.context, existing.range, "Other decleration was here");
 		diagnostics::error(ctx.context, decl.range, "Redefinition of struct symbol in scope");
 		return;
 	}
@@ -179,8 +178,9 @@ fn void index_function_decl(SemaContext* ctx, Scope* scope, FnDecl* f)
 {
 	Decl* decl = (Decl*)f;
 
-	if (!scope::define(scope, decl.name.text, decl))
+	if (Decl* existing = scope::define(scope, decl.name.text, decl))
 	{
+		diagnostics::note(ctx.context, existing.range, "Other decleration was here");
 		diagnostics::error(ctx.context, f.range, "Redefinition of function symbol in scope");
 		return;
 	}
@@ -205,8 +205,9 @@ fn void index_var_decl(SemaContext* ctx, Scope* scope, VarDecl* v)
 {
 	Decl* decl = (Decl*)v;
 
-	if (!scope::define(scope, decl.name.text, decl))
+	if (Decl* existing = scope::define(scope, decl.name.text, decl))
 	{
+		diagnostics::note(ctx.context, existing.range, "Other decleration was here");
 		diagnostics::error(ctx.context, decl.range, "Redefinition of global variable symbol in scope");
 		return;
 	}
@@ -216,8 +217,9 @@ fn void index_var_decl(SemaContext* ctx, Scope* scope, VarDecl* v)
 
 fn void index_enum_decl(SemaContext* ctx, Scope* scope, Decl* decl)
 {
-	if (!scope::define(scope, decl.name.text, decl))
+	if (Decl* existing = scope::define(scope, decl.name.text, decl))
 	{
+		diagnostics::note(ctx.context, existing.range, "Other decleration was here");
 		diagnostics::error(ctx.context, decl.range, "Redefinition of enum symbol in scope");
 		return;
 	}

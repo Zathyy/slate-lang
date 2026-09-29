@@ -58,6 +58,7 @@ fn TargetLayout get_platform_layout(OsType os, ArchType arch)
     for (char i = BitSizes.BITS8.ordinal; i < BitSizes::len; i++)
     {
    		layout.integers[i] = os::get_alignment(os, arch, BitSizes::from_ordinal(i).bits);
+   		layout.floats[i] = os::get_alignment(os, arch, BitSizes::from_ordinal(i).bits);
     }
 	layout.integers[BitSizes.BIT1] = layout.integers[BitSizes.BITS8];
     return layout;

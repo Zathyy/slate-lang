@@ -173,3 +173,44 @@ fn ulong eval_const_int(SemaContext* ctx, Node* expr)
             return 0;
     }
 }
+
+fn bool is_valid_cast(Type* from, Type* to)
+{
+    if (from == null || to == null) return false;
+
+    Type* src = from.canonical != null ? from.canonical : from;
+    Type* dst = to.canonical != null ? to.canonical : to;
+
+    // Same type cast
+    if (src == dst) return true;
+
+    // Void casts (e.g. (void)expr)
+    if (dst.kind == TYPE_VOID) return true;
+
+    if ((src.is_integer() || src.is_float()) && (dst.is_integer() || dst.is_float()))
+    {
+        return true;
+    }
+
+    if ((src.kind == TYPE_BOOL && dst.is_integer()) ||
+            (src.is_integer() && dst.kind == TYPE_BOOL))
+    {
+        return true;
+    }
+
+    // Pointer to Pointer
+    if (src.kind == TYPE_POINTER && dst.kind == TYPE_POINTER) return true;
+
+    // Pointer to Int / Int to Pointer
+    if ((src.kind == TYPE_POINTER && dst.is_integer()) ||
+        (src.is_integer() && dst.kind == TYPE_POINTER))
+    {
+        return true;
+    }
+
+    // Enum to underlying Int / Int to Enum
+    if (src.kind == TYPE_ENUM && dst.is_integer()) return true;
+    if (src.is_integer() && dst.kind == TYPE_ENUM) return true;
+
+    return false;
+}

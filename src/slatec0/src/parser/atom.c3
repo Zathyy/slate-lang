@@ -1,6 +1,7 @@
 module slate::parser;
 
 import slate::core;
+import slate::lexer;
 
 import std::collections;
 
@@ -136,4 +137,146 @@ fn NodeArray parse_param_list(ParseContext* ctx) => @pool()
 	}
 
 	return alloc::clone_slice(ctx.allocator, params.array_view());
+}
+
+fn TypeDescriptor* make_type_descriptor(ParseContext* ctx)
+{
+	return alloc::new(ctx.allocator, TypeDescriptor);
+}
+
+<*
+ Handles primitive and named type identifiers plus postfix pointer, array,
+ slice, vector, and generic type forms.
+*>
+fn TypeDescriptor* parse_type(ParseContext* ctx, Node* path_expr = null)
+{
+	Range start = ctx.current.range;
+
+	diagnostics::log_debug("parse_type_expr");
+
+	TypeDescriptor* current_type = make_type_descriptor(ctx);
+	current_type.range = { start.start, start.end, start.file_id };
+	defer current_type.range.end = ctx.peek(-1).range.end;
+	current_type.is_const = consume(ctx, CONST);
+
+	if (ctx.current.kind.is_primitive())
+	{
+		Token t = ctx.current;
+		advance(ctx);
+
+		current_type.type_kind = TYPE_IDENTIFIER;
+		current_type.unresolved.name = ctx.ident(t);
+		current_type.unresolved.path = null;
+	}
+	else
+	{
+		Node* path = path_expr ? path_expr : parse_path(ctx, true);
+
+		if (ctx.is(IDENT))
+		{
+			current_type.type_kind = TYPE_IDENTIFIER;
+			current_type.unresolved.name = ctx.ident(ctx.current);
+			current_type.unresolved.path = path;
+			advance(ctx);
+		}
+		else
+		{
+			diagnostics::error(ctx.context, ctx.current.range, "Expected type identifier");
+		}
+	}
+
+	bool has_optional = false;
+
+	while (true)
+	{
+		Token t = ctx.current;
+
+		if (t.kind == ASTERISK)
+		{
+			advance(ctx);
+
+			TypeDescriptor* ptr_node = make_type_descriptor(ctx);
+			ptr_node.range = { start.start, ctx.current.range.end, start.file_id };
+
+			ptr_node.type_kind = TYPE_POINTER;
+			ptr_node.modify.base = current_type; // The previous node becomes the base
+
+			current_type = ptr_node;
+			continue;
+		}
+
+		if (t.kind == AMP)
+		{
+			advance(ctx);
+
+			TypeDescriptor* ref_node = make_type_descriptor(ctx);
+			ref_node.range = { start.start, ctx.current.range.end, start.file_id };
+
+			ref_node.type_kind = TYPE_REF;
+			ref_node.modify.base = current_type;
+
+			current_type = ref_node;
+
+			continue;
+		}
+
+		if (t.kind == LBRACKET)
+		{
+			advance(ctx);
+
+			has_optional = false;
+
+			TypeDescriptor* arr_node = make_type_descriptor(ctx);
+			arr_node.range = { start.start, ctx.current.range.end, start.file_id };
+
+			if (ctx.is(RBRACKET))
+			{
+				advance(ctx);
+				arr_node.type_kind = TYPE_SLICE;
+				arr_node.modify.base = current_type;
+			}
+			else if (ctx.is(ASTERISK) && ctx.peek(1).kind == RBRACKET)
+			{
+				advance(ctx); // Consume '*'
+				advance(ctx); // Consume ']'
+
+				arr_node.type_kind = TYPE_ARRAY;
+				arr_node.array.base = current_type;
+				arr_node.array.len_expr = null; // null represents inferred array size [*]
+			}
+			else
+			{
+				arr_node.type_kind = TYPE_ARRAY;
+				arr_node.array.base = current_type;
+				arr_node.array.len_expr = parse_expr(ctx);
+				if (!consume(ctx, RBRACKET))
+				{
+					diagnostics::error(ctx.context, ctx.current.range, "Expected ']' to close array");
+				}
+			}
+
+			arr_node.range.end = ctx.peek(-1).range.end;
+			current_type = arr_node;
+			continue;
+		}
+
+		if (t.kind == LESS)
+		{
+			TypeDescriptor* gen_node = make_type_descriptor(ctx);
+			gen_node.range = { start.start, ctx.current.range.end, start.file_id };
+
+			gen_node.type_kind = TYPE_GENERIC;
+			gen_node.generic.base = current_type;
+			gen_node.generic.params = parse_generics_list(ctx);
+
+			gen_node.range.end = ctx.current.range.end;
+
+			current_type = gen_node;
+			continue;
+		}
+
+		break;
+	}
+
+	return current_type;
 }

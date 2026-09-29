@@ -5,6 +5,18 @@ import slate::lexer;
 
 import std::collections;
 
+fn Node* parse_decl_or_expr(ParseContext* ctx)
+{
+    Token t = ctx.current;
+
+    if (t.kind.is_primitive() || ctx.is(VAR) || ctx.is(CONST) || is_type_decl_lookahead(ctx))
+    {
+        return parse_local_decl(ctx);
+    }
+
+    return parse_expr(ctx);
+}
+
 <*
  @require ctx.current.kind == MODULE
 *>
@@ -179,7 +191,7 @@ fn Node* parse_global_decl(ParseContext* ctx)
 fn Node* parse_local_decl(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
-	diagnostics::log_debug("parse_global_decl");
+	diagnostics::log_debug("parse_local_decl");
 	VarDecl* node = ctx.ast.alloc_node(VarDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 
@@ -200,7 +212,6 @@ fn Node* parse_local_decl(ParseContext* ctx)
 
 	if (consume(ctx, TokenKind.EQ))
     {
-        advance(ctx);
         node.init_expr = parse_expr(ctx);
     }
 
@@ -212,7 +223,7 @@ fn Node* parse_local_decl(ParseContext* ctx)
 fn Node* parse_fn_decl(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
-	diagnostics::log_debug("parse_global_decl");
+	diagnostics::log_debug("parse_fn_decl");
 	FnDecl* node = ctx.ast.alloc_node(FnDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 
@@ -222,6 +233,13 @@ fn Node* parse_fn_decl(ParseContext* ctx)
 	}
 
 	advance(ctx);
+
+	if (ctx.peek(1).kind == DOT)
+	{
+		node.method_type = parse_type(ctx);
+
+		expect(ctx, node, DOT);
+	}
 
 	node.name = parse_ident(ctx);
 
@@ -242,7 +260,7 @@ fn Node* parse_fn_decl(ParseContext* ctx)
 	if (ctx.is(ARROW))
 	{
 		expect(ctx, node, ARROW);
-		node.ret_type = parse_type_expr(ctx);
+		node.ret_type = parse_type(ctx);
 	}
 
 	if (ctx.is(LBRACE))
@@ -263,7 +281,7 @@ fn Node* parse_fn_decl(ParseContext* ctx)
 fn Node* parse_struct_decl(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
-	diagnostics::log_debug("parse_global_decl");
+	diagnostics::log_debug("parse_struct_decl");
 	StructDecl* node = ctx.ast.alloc_node(StructDecl, start);
 	defer node.range.end = ctx.peek(-1).range.end;
 
@@ -281,7 +299,7 @@ fn Node* parse_struct_decl(ParseContext* ctx)
 	// has generic? <T>
 	if (ctx.is(LESS))
 	{
-
+		node.generics = parse_generics_list(ctx);
 	}
 
 	expect(ctx, node, LBRACE);
@@ -341,7 +359,7 @@ fn Node* parse_enum_decl(ParseContext* ctx) => @pool()
 
 	if (consume(ctx, COLON))
 	{
-		node.backing_type = parse_type_expr(ctx);
+		node.backing_type = parse_type(ctx);
 	}
 
 	if (!consume(ctx, LBRACE))
@@ -404,7 +422,7 @@ fn Node* parse_typedef_decl(ParseContext* ctx)
 
 	expect(ctx, node, EQ);
 
-	node.base_type = parse_type_expr(ctx);
+	node.base_type = parse_type(ctx);
 
 	expect(ctx, node, EOS);
 
@@ -429,16 +447,10 @@ fn Node* parse_param_decl(ParseContext* ctx)
 	}
 
 	bool is_ref = consume(ctx, AMP);
-	Node* parsed_type = null;
+	TypeDescriptor* parsed_type = null;
 	bool has_ellipsis_after_type = false;
 
-	parsed_type = parse_type_expr(ctx);
-	if (parsed_type && parsed_type.kind == ERROR)
-	{
-		node.flags.has_error = true;
-	}
-
-	node.type = parsed_type;
+	node.type = parse_type(ctx);
 
 	node.name = parse_ident(ctx);
 

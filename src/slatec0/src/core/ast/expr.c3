@@ -19,47 +19,6 @@ struct CatchExpr
     Node* body;           // Block or expression executed on error
 }
 
-<*
- Payloads:
-- unresolved: TYPE_IDENTIFIER name and optional module path.
-- modify: TYPE_POINTER and TYPE_SLICE base type.
-- array: TYPE_ARRAY and TYPE_VECTOR base type plus length expression.
-  `len_expr` is null for inferred arrays such as `Type[*]`.
-- generic: TYPE_GENERIC base type and generic argument expressions.
-- func: TYPE_FUNCTION return type and VAR_DECL parameter nodes.
-*>
-struct TypeExpr
-{
-	inline Expr node;
-	TypeExprKind type_kind;
-
-	union
-	{
-		struct unresolved
-		{
-			Ident* name;
-			Node* path;
-		}
-
-		struct modify
-		{
-			Node* base;
-		}
-
-		struct array
-		{
-			Node* base;
-			Node* len_expr;
-		}
-
-		struct generic
-		{
-			Node* base;
-			Node*[] params;
-		}
-	}
-}
-
 struct BinaryExpr
 {
 	inline Expr node;
@@ -73,6 +32,7 @@ struct IdentExpr
 	inline Expr node;
 	Ident* ident;
 	Node* path_expr;
+	Decl* decl; // Set during semantic analysis
 }
 
 struct CallExpr
@@ -104,6 +64,7 @@ struct LiteralExpr
 	inline Expr node;
 	LiteralKind lit_kind;
 	String value;
+	bool is_negative;
 
 	union resolved
 	{
@@ -118,6 +79,12 @@ struct UnaryExpr
 	inline Expr node;
 	UnaryOpKind operator;
 	Node* expr;
+	Decl* decl;
+}
+
+struct PostUnaryExpr
+{
+	inline UnaryExpr unary;
 }
 
 struct CondExpr
@@ -156,7 +123,7 @@ struct CastExpr
 {
 	inline Expr node;
 	Node* operand;
-	Node* inner;
+	TypeDescriptor* inner;
 }
 
 struct GroupExpr

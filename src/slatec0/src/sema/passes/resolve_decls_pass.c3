@@ -30,6 +30,8 @@ fn void resolve_decls_pass(SemaContext* ctx)
 					TypedefDecl* t_decl = node.as(TypedefDecl);
 					Type* target_type = resolve_type(ctx, scope, t_decl.base_type);
 
+					diagnostics::log_debug("Resolved typedef: %s", t_decl.node.name.text);
+
 					if (target_type != null && t_decl.resolved_type != null)
 				    {
 				        t_decl.resolved_type.canonical = target_type.canonical != null
@@ -90,9 +92,7 @@ fn void resolve_decls_pass(SemaContext* ctx)
 
 				if (fn_decl.ret_type)
 				{
-					Expr* expr = (Expr*)fn_decl.ret_type;
-					expr.resolved_type = resolve_type(ctx, fn_scope, fn_decl.ret_type);
-					set_type(ctx, expr, expr.resolved_type);
+					fn_decl.ret_type.resolved_type = resolve_type(ctx, fn_scope, fn_decl.ret_type);
 				}
 
 				foreach (Node* param_node : fn_decl.params)

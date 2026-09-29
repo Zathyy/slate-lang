@@ -56,3 +56,18 @@ fn bool is_comparison_op(OperatorKind op)
             return false;
     }
 }
+
+fn bool is_lvalue(Node* node)
+{
+    if (node == null) return false;
+
+    switch (node.kind)
+    {
+        case IDENT_EXPR:
+        case ACCESS_EXPR:  // e.g. obj.field
+        case UNARY_EXPR:   // e.g. *ptr (dereference)
+            return true;
+        default:
+            return false;
+    }
+}

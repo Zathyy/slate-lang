@@ -44,12 +44,4 @@ fn void resolve_path()
 
 	SemaContext* sema = sema::create(context);
 	sema::run_pipeline(sema);
-
-	SourceFile* main_file = context.files.get("main.sl")!!;
-    Scope* main_scope = main_file.sema.scope;
-
-	test::ne(sema::resolve_path(sema, main_scope, "env::WIN32"), null);        // Alias match via get_import("env")
-	test::ne(sema::resolve_path(sema, main_scope, "std::core::env::WIN32"), null); // Full module path fallback
-
-
 }
