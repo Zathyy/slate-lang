@@ -586,8 +586,16 @@ fn Token next(Lexer* lexer)
 		case ']':
 			return lexer.emit(RBRACKET, "]");
 		case '>':
+			if (lexer.peek(1) == '=')
+			{
+				return lexer.emit(GREATER_EQ, ">=");
+			}
 			return lexer.emit(GREATER, ">");
 		case '<':
+			if (lexer.peek(1) == '=')
+			{
+				return lexer.emit(LESS_EQ, "<=");
+			}
 			return lexer.emit(LESS, "<");
 		case '&':
 			switch (lexer.peek())

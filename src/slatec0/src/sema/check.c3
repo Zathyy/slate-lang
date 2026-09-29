@@ -88,6 +88,14 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
                     Type* u8_type = lookup::primitive_type(ctx.context.lookup, TYPE_U8);
                     resolved = lookup::get_or_create_pointer(ctx.context.lookup, u8_type);
                     lit.resolved_type = resolved;
+                    break;
+				}
+				case CHAR:
+				{
+					lit.resolved.integer = lit.value.to_char() ?? 0;
+     				resolved = lookup::primitive_type(ctx.context.lookup, TYPE_U8);
+         			lit.resolved_type = resolved;
+            		break;
 				}
 				default:
 					resolved = scope::lookup(ctx, ctx.transient.current_scope, "String").resolved_type;
@@ -129,7 +137,7 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 		        if (bin.right.kind == LITERAL_EXPR && lhs_t.is_integer())
 		        {
 		            LiteralExpr* lit = bin.right.as(LiteralExpr);
-		            if (lit.lit_kind == INT)
+		            if (lit.lit_kind == INT || lit.lit_kind == CHAR)
 		            {
 						if (!lookup::fits_in_integer(lit.resolved.integer, lit.is_negative, lhs_t))
 						{
@@ -143,7 +151,7 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 		        else if (bin.left.kind == LITERAL_EXPR && rhs_t.is_integer())
 		        {
 		            LiteralExpr* lit = bin.left.as(LiteralExpr);
-		            if (lit.lit_kind == INT)
+		            if (lit.lit_kind == INT || lit.lit_kind == CHAR)
 		            {
 						if (!lookup::fits_in_integer(lit.resolved.integer, lit.is_negative, rhs_t))
 						{
@@ -454,6 +462,13 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
             }
 
             diagnostics::error(ctx.context, access.right.range, "Invalid static access member");
+            break;
+        }
+        case GROUP_EXPR:
+        {
+            GroupExpr* group = expr.as(GroupExpr);
+            resolved = check_expr(ctx, (Expr*)group.inner);
+            group.resolved_type = resolved; // If your GroupExpr struct has a resolved_type field
             break;
         }
 		default:

@@ -186,6 +186,8 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 					return llvm::const_int(llvm_type, (ulong)lit.resolved.boolean, 0);
 				case STRING:
 					return emit_global_string_const(cg, lit.value);
+				case CHAR:
+					return llvm::const_int(llvm_type, (ulong)lit.resolved.integer, 0);
 				default:
 					diagnostics::log_error("Unsupported literal kind");
 					unreachable();
@@ -200,6 +202,11 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 			Type* dst_type = cast.resolved_type;
 
 			return emit_cast(cg, operand_val, src_type, dst_type);
+		}
+		case GROUP_EXPR:
+		{
+			GroupExpr* group = expr.as(GroupExpr);
+			return emit_expr(cg, (Expr*)group.inner);
 		}
 		case POST_UNARY_EXPR:
 		{

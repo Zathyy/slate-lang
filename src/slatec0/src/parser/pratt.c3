@@ -208,6 +208,8 @@ fn Node* parse_prefix_expr(ParseContext* ctx)
 		}
 		case CAST:
 			return parse_cast_expr(ctx);
+		case LPAREN:
+			return parse_group_expr(ctx);
 		case BANG:
 		case MINUS:
 		case BIT_NOT:
@@ -290,6 +292,7 @@ fn Node* parse_infix(ParseContext* ctx, Node* left, Precedence rbp)
 		case LESS_EQ:
 		case AMP:
 		case AND:
+		case OR:
 		case BIT_AND_ASSIGN:
 		case NOT_EQUAL:
 		case RSHIFT_ASSIGN:

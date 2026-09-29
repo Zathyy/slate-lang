@@ -24,6 +24,7 @@ fn Node* parse_literal_expr(ParseContext* ctx)
 		case FLOAT_LITERAL: kind = FLOAT;
  		case BYTES_LITERAL: kind = CHAR;
    		case STRING_LITERAL: kind = STRING;
+     	case CHAR_LITERAL:   kind = CHAR;
  		default: unreachable("Unknown literal kind");
 	}
 
@@ -39,7 +40,7 @@ fn Node* parse_binary_expr(ParseContext* ctx, Node* left, Precedence prec)
 	Range start  = ctx.current.range;
 	TokenKind kind = ctx.current.kind;
 	advance(ctx);
-	Node* right = parse_expr(ctx);
+	Node* right = parse_expr(ctx, prec);
 
 	BinaryExpr* node = ctx.ast.alloc_node(BinaryExpr, { start.start, right.range.end, ctx.context.current_source_file });
 	node.left = left;
@@ -194,4 +195,36 @@ fn NodeArray parse_arg_list(ParseContext* ctx) => @pool()
 	}
 
 	return alloc::clone_slice(ctx.allocator, args.array_view());
+}
+
+fn Node* parse_group_expr(ParseContext* ctx)
+{
+	diagnostics::log_debug("parse_group_expr");
+	Range start = ctx.current.range;
+
+	GroupExpr* group = ctx.ast.alloc_node(GroupExpr, ctx.current.range);
+	defer group.range.end = ctx.peek(-1).range.end;
+
+	if (!consume(ctx, LPAREN))
+	{
+		diagnostics::error(
+			ctx.context,
+			ctx.current.range,
+			"Expected '(' got '%s'",
+			ctx.current.kind.description
+		);
+	}
+	Node* inner = parse_expr(ctx);
+	if (!consume(ctx, RPAREN))
+	{
+		diagnostics::error(
+			ctx.context,
+			ctx.current.range,
+			"Expected ')' got '%s'",
+			ctx.current.kind.description
+		);
+	}
+
+	group.inner = inner;
+	return (Node*)group;
 }
