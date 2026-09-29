@@ -1,0 +1,2 @@
+module std::core::panic;
+
