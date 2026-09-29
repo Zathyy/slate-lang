@@ -1,6 +1,7 @@
 module main;
 
 import foo;
+import std::libc;
 
 struct Bar
 {
@@ -9,12 +10,9 @@ struct Bar
 
 fn main() -> i32
 {
-    i32 a = 10;
-    i64 b = cast<i64>(a);
+    libc::printf("%s", "Hello there");
 
-    a = 1000;
-
-    return a;
+    return 5;
 }
 
 fn bar(Bar* string)

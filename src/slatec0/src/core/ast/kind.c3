@@ -50,6 +50,7 @@ enum NodeKind : char
 	INITIALIZER_LIST_EXPR,
 	ACCESS_EXPR,
 	RANGE_EXPR,
+	NAMED_ARG_EXPR,
 }
 
 fn bool NodeKind.is_decl(self) @inline

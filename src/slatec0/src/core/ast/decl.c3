@@ -69,6 +69,7 @@ struct FnDecl
 	NodeArray generics;
 	NodeArray params;
 	NodeArray attributes;
+	bool is_variadic;
 }
 
 <*

@@ -3,6 +3,8 @@ module slate::parser;
 import slate::core;
 import slate::lexer;
 
+import std::collections;
+
 fn Node* parse_literal_expr(ParseContext* ctx)
 {
 	Range start = ctx.current.range;
@@ -21,6 +23,7 @@ fn Node* parse_literal_expr(ParseContext* ctx)
 		case INT_LITERAL: kind = INT;
 		case FLOAT_LITERAL: kind = FLOAT;
  		case BYTES_LITERAL: kind = CHAR;
+   		case STRING_LITERAL: kind = STRING;
  		default: unreachable("Unknown literal kind");
 	}
 
@@ -111,4 +114,84 @@ fn Node* parse_post_unary_expr(ParseContext* ctx, Node* left, Precedence bp)
 	node.expr = left;
 	advance(ctx);
 	return (Node*)node;
+}
+
+fn Node* parse_call_expr(ParseContext* ctx, Node* callee)
+{
+	Range start = ctx.current.range;
+	CallExpr* node = ctx.ast.alloc_node(CallExpr, callee.range);
+	defer node.range.end = ctx.peek(-1).range.end;
+	expect(ctx, node, LPAREN);
+	node.callee = callee;
+
+	diagnostics::log_debug("call_expr: %s", ctx.current.value);
+
+	if (!ctx.is(RPAREN) && !ctx.is(EOS) && !ctx.eof())
+	{
+		diagnostics::log_debug("call_expr - args");
+		node.args = parse_arg_list(ctx);
+	}
+
+	expect(ctx, node, RPAREN);
+
+	Node* body;
+	if (ctx.is(LBRACE))
+	{
+		body = parse_compound_stmt(ctx);
+	}
+
+	return (Node*)node;
+}
+
+<*
+ param_list ::= ('...' arg | arg (',' arg)*)?
+ parameter ::= ((param_path '=')? expr) | param_path
+*>
+fn NodeArray parse_arg_list(ParseContext* ctx) => @pool()
+{
+	List{Node*} args;
+	args.tinit();
+
+	while (!ctx.eof() && !ctx.is(RPAREN))
+	{
+		int pos_before  = ctx.pos;
+		Node* expr = null;
+		Range start_pos = ctx.current.range;
+		if (ctx.is(RPAREN)) break;
+
+		diagnostics::log_debug("parse arg - %s", ctx.current.value);
+
+		expr = parse_expr(ctx);
+
+		if (expr.kind == IDENT_EXPR && consume(ctx, COLON))
+		{
+			IdentExpr* ident = expr.as(IdentExpr);
+			expr = (Node*)ctx.ast.alloc_node(NamedArgExpr, start_pos);
+			NamedArgExpr* named = expr.as(NamedArgExpr);
+			named.name = ident.ident;
+
+			named.value = parse_expr(ctx);
+			named.range.end = ctx.peek(-1).range.end;
+		}
+
+		diagnostics::log_debug("parse arg AFTER - %s", ctx.current.value);
+
+		args.push(expr);
+
+		if (ctx.pos == pos_before)
+		{
+			diagnostics::error(
+				ctx.context,
+				ctx.current.range,
+				"Parser loop stalled in argument list at token: %s",
+				ctx.current.kind
+			);
+			advance(ctx);
+		}
+
+		if (!consume(ctx, COMMA)) break;
+		if (ctx.is(RPAREN)) break;
+	}
+
+	return alloc::clone_slice(ctx.allocator, args.array_view());
 }

@@ -101,6 +101,8 @@ fn bool emit_module(CodegenContext* gen, Module* ast_mod)
 		}
 	}
 
+	//llvm::dump_module(gen.mod);
+
 	CChar* error_msg = null;
 	if (llvm::verify_module(gen.mod, RETURN_STATUS_ACTION, &error_msg))
 	{
@@ -150,15 +152,18 @@ fn void bind_value(CodegenContext* gen, Decl* decl, LLVMValueRef val)
 fn LLVMValueRef emit_global_string_const(
     CodegenContext* cg,
     String str,
-    CChar* name = ".str")
+    CChar* name = ".str") => @pool()
 {
     LLVMContextRef ctx = cg.llvm_ctx;
+
+    str = str.treplace("\"", "");
+    String final_string = string::format(cg.alloc, "%s.str", cg.ast_mod.name.treplace("::", "."));
 
     // Creates an i8 array constant with a trailing null terminator (\0)
     LLVMValueRef str_val = llvm::const_string_in_context(ctx, (CChar*)str.ptr, (uint)str.len, 0);
 
     LLVMTypeRef str_type = llvm::array_type(llvm::int_8_type_in_context(ctx), (uint)str.len + 1);
-    LLVMValueRef global_var = llvm::add_global(cg.mod, str_type, name);
+    LLVMValueRef global_var = llvm::add_global(cg.mod, str_type, (CChar*)final_string.ptr);
 
     llvm::set_initializer(global_var, str_val);
     llvm::set_global_constant(global_var, 1);
@@ -168,4 +173,15 @@ fn LLVMValueRef emit_global_string_const(
     // Cast [N x i8]* to i8* pointer for String slice 'ptr' field
     LLVMTypeRef i8_ptr_t = llvm::pointer_type(llvm::int_8_type_in_context(ctx), 0);
     return llvm::const_bit_cast(global_var, i8_ptr_t);
+}
+
+fn LLVMValueRef get_or_add_function(CodegenContext* cg, Decl* decl, String name)
+{
+    LLVMValueRef func = llvm::get_named_function(cg.mod, (CChar*)name.ptr);
+    if (func == null)
+    {
+        LLVMTypeRef fn_type = map_type(cg, decl.resolved_type);
+        func = llvm::add_function(cg.mod, (CChar*)name.ptr, fn_type);
+    }
+    return func;
 }

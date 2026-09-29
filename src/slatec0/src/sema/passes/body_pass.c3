@@ -30,6 +30,10 @@ fn void check_fn_body(SemaContext* ctx, Scope* parent_scope, FnDecl* fn_decl)
 	{
 		VarDecl* param = param_node.as(VarDecl);
 
+		if (param.var_flags.is_variadic) {
+			fn_decl.is_variadic = true;
+		}
+
 		if (param.var_flags.is_self_by_ref || param.var_flags.is_self)
 		{
 		}

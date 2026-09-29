@@ -20,8 +20,7 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 			if (bin.op == OP_ASSIGN)
 			{
 				LLVMValueRef ptr = emit_lvalue(cg, lhs_expr);
-				if (ptr == null) return null;
-
+				assert(ptr != null);
 				LLVMTypeRef store_inst = llvm::build_store(cg.builder, rhs, ptr);
 				return rhs;
 			}
@@ -80,7 +79,7 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 
 				case OP_ADD_ASSIGN:
 					LLVMValueRef ptr = emit_lvalue(cg, lhs_expr);
-					if (ptr == null) return null;
+					assert(ptr != null);
 
 					LLVMValueRef new_val = is_float
 						? llvm::build_f_add(cg.builder, lhs, rhs, "add_tmp")
@@ -91,7 +90,7 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 				case OP_SUB_ASSIGN:
 				{
 					LLVMValueRef ptr = emit_lvalue(cg, lhs_expr);
-					if (ptr == null) return null;
+					assert(ptr != null);
 
 					LLVMValueRef new_val = is_float
 						? llvm::build_f_sub(cg.builder, lhs, rhs, "sub_tmp")
@@ -104,7 +103,7 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 				case OP_MULT_ASSIGN:
 				{
 					LLVMValueRef ptr = emit_lvalue(cg, lhs_expr);
-					if (ptr == null) return null;
+					assert(ptr != null);
 
 					LLVMValueRef new_val = is_float
 						? llvm::build_f_mul(cg.builder, lhs, rhs, "mul_tmp")
@@ -117,7 +116,7 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 				case OP_DIV_ASSIGN:
 				{
 					LLVMValueRef ptr = emit_lvalue(cg, lhs_expr);
-					if (ptr == null) return null;
+					assert(ptr != null);
 
 					LLVMValueRef new_val = null;
 					if (is_float)
@@ -137,16 +136,16 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 				}
 				default:
 					diagnostics::log_error("Unhandled binary operator in codegen: %s", bin.op.description);
-					return null;
+					unreachable();
 			}
 		}
 		case IDENT_EXPR:
 		{
 			IdentExpr* ident_expr = expr.as(IdentExpr);
 
-			if (ident_expr.decl == null)
+			if (ident_expr.decl != null && ident_expr.decl.kind == FN_DECL)
 			{
-				return null;
+    			return get_or_add_function(cg, ident_expr.decl, ident_expr.ident.text);
 			}
 
 			LLVMValueRef alloca_ptr = cg.locals.get(ident_expr.decl) ?? null;
@@ -154,17 +153,19 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 			{
 				diagnostics::error(cg.context, expr.range,
 					"Local variable '%s' has no allocated space", ident_expr.ident.text);
-				return null;
+				unreachable();
 			}
 
 			LLVMTypeRef llvm_type = map_type(cg, ident_expr.decl.resolved_type);
 			if (!llvm_type)
 			{
 				diagnostics::log_error("Failed to map llvm_type, from variable");
+				unreachable();
 			}
 			if (!cg.builder)
 			{
 				diagnostics::log_error("builder is null");
+				unreachable();
 			}
 			LLVMValueRef load_inst = llvm::build_load_2(cg.builder, llvm_type, alloca_ptr, (CChar*)ident_expr.ident.text.ptr);
 			return load_inst;
@@ -172,7 +173,8 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 		case LITERAL_EXPR:
 		{
 			LiteralExpr* lit = expr.as(LiteralExpr);
-			LLVMTypeRef llvm_type = map_type(cg, expr.resolved_type);
+			diagnostics::log_debug("Literal: %s", lit.value);
+			LLVMTypeRef llvm_type = map_type(cg, lit.resolved_type);
 
 			switch (lit.lit_kind)
 			{
@@ -182,9 +184,11 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 					return llvm::const_real(llvm_type, lit.resolved._float);
 				case BOOL:
 					return llvm::const_int(llvm_type, (ulong)lit.resolved.boolean, 0);
+				case STRING:
+					return emit_global_string_const(cg, lit.value);
 				default:
 					diagnostics::log_error("Unsupported literal kind");
-					return null;
+					unreachable();
 			}
 		}
 		case CAST_EXPR:
@@ -259,8 +263,116 @@ fn LLVMValueRef emit_expr(CodegenContext* cg, Expr* expr)
 			//  Return old value for postfix evaluation
 			return old_val;
 		}
-		default:
-			diagnostics::warn(cg.context, expr.range, "Unhandled expr");
+		case CALL_EXPR:
+        {
+            CallExpr* call = expr.as(CallExpr);
+
+            LLVMValueRef callee_val = emit_expr(cg, (Expr*)call.callee);
+            if (callee_val == null) return null;
+
+            int arg_count = call.args.len;
+            LLVMValueRef* arg_values = alloc::alloc_array(cg.alloc, LLVMValueRef, arg_count);
+            for (int i = 0; i < arg_count; i++)
+            {
+                arg_values[i] = emit_expr(cg, (Expr*)call.args[i]);
+                if (arg_values[i] == null) return null;
+            }
+
+            Type* callee_type = ((Expr*)call.callee).resolved_type;
+            if (callee_type.kind == TYPE_REF || callee_type.kind == TYPE_POINTER)
+            {
+                callee_type = callee_type.canonical;
+            }
+            LLVMTypeRef fn_llvm_type = map_type(cg, callee_type);
+            assert(fn_llvm_type != null && "Failed to map callee_type to LLVMTypeRef");
+
+            return llvm::build_call_2(cg.builder, fn_llvm_type, callee_val, arg_values, (uint)arg_count, "call_tmp");
+        }
+        case ACCESS_EXPR:
+        {
+            AccessExpr* access = expr.as(AccessExpr);
+
+            if (access.access_kind == STATIC)
+            {
+	            if (access.right.kind == CALL_EXPR)
+	            {
+	                CallExpr* call = access.right.as(CallExpr);
+	                if (call.callee.kind != IDENT_EXPR) return null;
+
+	                IdentExpr* callee_ident = call.callee.as(IdentExpr);
+	                LLVMValueRef fn_val = get_or_add_function(cg, callee_ident.decl, callee_ident.ident.text);
+
+	                int arg_count = call.args.len;
+	                LLVMValueRef* arg_values = alloc::alloc_array(cg.alloc, LLVMValueRef, arg_count);
+	                for (int i = 0; i < arg_count; i++)
+	                {
+	                    arg_values[i] = emit_expr(cg, (Expr*)call.args[i]);
+	                }
+
+	                LLVMTypeRef fn_llvm_type = map_type(cg, callee_ident.decl.resolved_type);
+	                return llvm::build_call_2(cg.builder, fn_llvm_type, fn_val, arg_values, (uint)arg_count, "call_tmp");
+	            }
+
+				if (access.right.kind == IDENT_EXPR)
+				{
+				    IdentExpr* ident = access.right.as(IdentExpr);
+				    if (ident.decl != null && ident.decl.kind == FN_DECL)
+				    {
+				        return get_or_add_function(cg, ident.decl, ident.ident.text);
+				    }
+
+				    String prop_name = ident.ident.text;
+				    return llvm::get_named_global(cg.mod, (CChar*)prop_name.ptr);
+				}
+            }
+
+            Expr* left_expr = (Expr*)access.left;
+            LLVMValueRef instance_ptr = emit_lvalue(cg, left_expr);
+            if (instance_ptr == null) return null;
+
+            Type* left_t = left_expr.resolved_type;
+            while (left_t.kind == TYPE_POINTER || left_t.kind == TYPE_REF)
+            {
+                left_t = left_t.canonical;
+            }
+
+            assert(left_t.data.decl.kind == STRUCT_DECL);
+
+            StructDecl* strukt = left_t.data.decl.as(StructDecl);
+
+            String field_name = access.right.as(IdentExpr).ident.text;
+            int field_index = -1;
+            for (int i = 0; i < strukt.fields.len; i++)
+            {
+            	VarDecl* field = strukt.fields[i].as(VarDecl);
+                if (field.name.text == field_name)
+                {
+                    field_index = i;
+                    break;
+                }
+            }
+
+            if (field_index == -1)
+            {
+                diagnostics::error(cg.context, expr.range, "Struct has no field named '%s'", field_name);
+                return null;
+            }
+
+            LLVMTypeRef struct_llvm_type = map_type(cg, left_t);
+
+            LLVMValueRef field_ptr = llvm::build_struct_gep2(
+                cg.builder,
+                struct_llvm_type,
+                instance_ptr,
+                (CUInt)field_index,
+                "field_ptr"
+            );
+
+            LLVMTypeRef field_llvm_type = map_type(cg, expr.resolved_type);
+            return llvm::build_load_2(cg.builder, field_llvm_type, field_ptr, "field_load");
+        }
+        default:
+			diagnostics::warn(cg.context, expr.range, "Unhandled expr: %s", expr.kind.description);
 			return null;
 	}
 }

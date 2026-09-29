@@ -90,6 +90,32 @@ fn LLVMTypeRef map_type(CodegenContext* gen, Type* type)
 				llvm_type = llvm::struct_type_in_context(gen.llvm_ctx, null, 0, 0);
 			}
 			break;
+		case TYPE_FN:
+		{
+		    FnDecl* func = type.data.decl.as(FnDecl);
+
+		    Type* ret_resolved_type = (func.ret_type != null) ? func.ret_type.resolved_type : null;
+
+		    LLVMTypeRef ret_type = (func.ret_type != null && func.ret_type.resolved_type != null)
+		        ? map_type(gen, func.ret_type.resolved_type)
+		        : llvm::void_type_in_context(gen.llvm_ctx);
+
+		    int param_count = func.params.len;
+		    LLVMTypeRef* param_types = alloc::alloc_array(gen.alloc, LLVMTypeRef, param_count);
+
+		    int actual_count = 0;
+		    for (int i = 0; i < param_count; i++)
+		    {
+		        VarDecl* param = func.params[i].as(VarDecl);
+		        if (param.var_flags.is_variadic) continue;
+
+		        diagnostics::log_info("VarDecl: %s", param.name.text);
+		        param_types[actual_count++] = map_type(gen, param.resolved_type);
+		    }
+
+		    llvm_type = llvm::function_type(ret_type, param_types, (uint)actual_count, (LLVMBool)func.is_variadic);
+		    break;
+		}
 		default:
 			diagnostics::log_error("Unhandled type kind in codegen map_type: %s", type.kind.description);
 			llvm_type = llvm::int_32_type_in_context(gen.llvm_ctx);

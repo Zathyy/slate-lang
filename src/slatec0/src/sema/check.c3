@@ -50,6 +50,7 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 	{
 		case LITERAL_EXPR:
 			LiteralExpr* lit = expr.as(LiteralExpr);
+			diagnostics::log_debug("Resolving literal: %s", lit.value);
 			switch (lit.lit_kind)
 			{
 				case INT:
@@ -82,8 +83,13 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 					lit.resolved_type = resolved;
 					break;
 				}
+				case STRING:
+				{
+                    Type* u8_type = lookup::primitive_type(ctx.context.lookup, TYPE_U8);
+                    resolved = lookup::get_or_create_pointer(ctx.context.lookup, u8_type);
+                    lit.resolved_type = resolved;
+				}
 				default:
-					// TODO: have a builtin slice type?
 					resolved = scope::lookup(ctx, ctx.transient.current_scope, "String").resolved_type;
 					lit.resolved_type = resolved;
 			}
@@ -185,19 +191,82 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
 		case CALL_EXPR:
 		{
 			CallExpr* call = expr.as(CallExpr);
-			Type* callee_t = check_expr(ctx, call.callee);
+            Type* callee_t = check_expr(ctx, call.callee);
+            ((Expr*)call.callee).resolved_type = callee_t;
 
-			if (callee_t.kind != TYPE_FN)
-			{
-				diagnostics::error(ctx.context, call.callee.range,
-					"Expression is not a callable function");
-			}
-			else
-			{
-				//typecheck_call_arguments(ctx, call, callee_t.as_fn);
-				//resolved = callee_t.as_fn.return_type;
-			}
-			break;
+            if (callee_t.kind != TYPE_FN)
+            {
+                diagnostics::error(ctx.context, call.callee.range,
+                    "Expression is not a callable function");
+                resolved = lookup::primitive_type(ctx.context.lookup, TYPE_VOID);
+            }
+            else
+            {
+                FnDecl* func = null;
+                if (callee_t.data.decl != null && callee_t.data.decl.kind == FN_DECL)
+                {
+                    func = (FnDecl*)callee_t.data.decl;
+                }
+
+                int arg_count = call.args.len;
+                bool is_variadic = func != null && func.is_variadic; // or check if last param is variadic
+                int fixed_param_count = func != null ? (is_variadic ? func.params.len - 1 : func.params.len) : 0;
+
+                // Validate argument count minimum for non-variadic, or general mismatch
+                if (func != null)
+                {
+                    if (!is_variadic && arg_count != fixed_param_count)
+                    {
+                        diagnostics::error(ctx.context, call.range,
+                            "Argument count mismatch: expected %d, got %d", fixed_param_count, arg_count);
+                    }
+                    else if (is_variadic && arg_count < fixed_param_count)
+                    {
+                        diagnostics::error(ctx.context, call.range,
+                            "Too few arguments: expected at least %d, got %d", fixed_param_count, arg_count);
+                    }
+                }
+
+                for (int i = 0; i < arg_count; i++)
+                {
+                    Node* arg = call.args[i];
+                    Type* arg_t = check_expr(ctx, arg);
+
+                    if (func != null)
+                    {
+                        if (i < fixed_param_count)
+                        {
+                            // Check against fixed parameters
+                            Type* param_t = ((Decl*)func.params[i]).resolved_type;
+
+                            // Coerce integer literals to match fixed parameter type if compatible
+                            if (arg_t != param_t && arg.kind == LITERAL_EXPR && arg_t.is_integer() && param_t.is_integer())
+                            {
+                                LiteralExpr* lit = arg.as(LiteralExpr);
+                                if (lit.lit_kind == INT)
+                                {
+                                    lit.resolved_type = param_t;
+                                    arg_t = param_t;
+                                }
+                            }
+
+                            if (arg_t != param_t)
+                            {
+                                diagnostics::error(ctx.context, arg.range,
+                                    "Mismatched type for argument %d: expected '%s', got '%s'",
+                                    i + 1, param_t.name, arg_t.name);
+                            }
+                        }
+                        else if (is_variadic)
+                        {
+                            // Variadic arguments: either untyped (no check) or checked against a vararg element type.
+                            // Since `...` has a null type, we intentionally skip strict equality checks here
+                            // unless your language supports typed varargs (e.g. T...).
+                        }
+                    }
+                }
+            }
+            break;
 		}
 		case CAST_EXPR:
         {
@@ -275,8 +344,120 @@ fn Type* check_expr(SemaContext* ctx, Node* expr)
             resolved = operand_t;
             break;
         }
+        case ACCESS_EXPR:
+        {
+        	AccessExpr* access = expr.as(AccessExpr);
+        	if (access.right == null)
+            {
+                diagnostics::error(ctx.context, expr.range, "Invalid member access right-hand side");
+                break;
+            }
+
+            if (access.access_kind == INSTANCE)
+            {
+                resolved = check_expr(ctx, access.left);
+                break;
+            }
+
+            if (access.left.kind != IDENT_EXPR)
+            {
+                diagnostics::error(ctx.context, access.left.range, "Invalid static access left-hand side");
+                break;
+            }
+
+            String ali = access.left.as(IdentExpr).ident.text;
+            String import_path = ctx.transient.current_scope.get_import(ali);
+            Module* target_mod = import_path != "" ? (ctx.context.modules.get(import_path) ?? null) : null;
+            if (target_mod == null)
+            {
+                target_mod = ctx.context.modules.get(ali) ?? null;
+            }
+
+            if (target_mod == null || target_mod.scope == null)
+            {
+                diagnostics::error(ctx.context, access.left.range, "Undeclared module '%s'", ali);
+                break;
+            }
+
+            if (access.right.kind == CALL_EXPR)
+            {
+                CallExpr* call = access.right.as(CallExpr);
+                if (call.callee == null || call.callee.kind != IDENT_EXPR)
+                {
+                    diagnostics::error(ctx.context, call.range, "Invalid function call in static access");
+                    break;
+                }
+
+                String func_name = call.callee.as(IdentExpr).ident.text;
+                Decl* member_decl = target_mod.scope.symbols.get(func_name) ?? null;
+                if (member_decl == null)
+                {
+                    diagnostics::error(ctx.context, call.callee.range, "Module '%s' has no member '%s'", ali, func_name);
+                    break;
+                }
+
+                Expr* callee_expr = (Expr*)call.callee;
+
+                call.callee.as(IdentExpr).decl = member_decl;
+                callee_expr.resolved_type = member_decl.resolved_type;
+
+                Type* fn_type = member_decl.resolved_type;
+                FnDecl* func = fn_type.data.decl.as(FnDecl);
+
+                int arg_count = call.args.len;
+                int param_count = func.params.len;
+
+                for (int i = 0; i < arg_count; i++)
+                {
+                    Node* arg = call.args[i];
+                    Type* arg_t = check_expr(ctx, arg);
+                    if (i < param_count)
+                    {
+                        Type* param_t = ((Decl*)func.params[i]).resolved_type;
+                        if (arg_t != param_t && arg.kind == LITERAL_EXPR && arg_t.is_integer() && param_t.is_integer())
+                        {
+                            LiteralExpr* lit = arg.as(LiteralExpr);
+                            if (lit.lit_kind == INT)
+                            {
+                                lit.resolved_type = param_t;
+                                arg_t = param_t;
+                            }
+                        }
+                        if (arg_t != param_t)
+                        {
+                            diagnostics::error(ctx.context, arg.range, "Mismatched type for argument %d: expected '%s', got '%s'", i + 1, param_t.name, arg_t.name);
+                        }
+                    }
+                }
+
+                resolved = func.resolved_type;
+                call.resolved_type = resolved;
+                access.resolved_type = resolved;
+                break;
+            }
+
+            if (access.right.kind == IDENT_EXPR)
+            {
+                String member_name = access.right.as(IdentExpr).ident.text;
+                Decl* member_decl = target_mod.scope.symbols.get(member_name) ?? null;
+                if (member_decl == null)
+                {
+                    diagnostics::error(ctx.context, access.right.range, "Module '%s' has no member '%s'", ali, member_name);
+                    break;
+                }
+
+                access.right.as(IdentExpr).decl = member_decl;
+                resolved = member_decl.resolved_type;
+                Expr* right_expr = (Expr*)access.right;
+                right_expr.resolved_type = resolved;
+                break;
+            }
+
+            diagnostics::error(ctx.context, access.right.range, "Invalid static access member");
+            break;
+        }
 		default:
-			diagnostics::error(ctx.context, expr.range, "Unsupported expression node");
+			diagnostics::error(ctx.context, expr.range, "Unsupported expression node: %s", expr.kind.description);
 			break;
 	}
 

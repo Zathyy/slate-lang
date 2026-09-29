@@ -95,6 +95,11 @@ fn void resolve_decls_pass(SemaContext* ctx)
 					fn_decl.ret_type.resolved_type = resolve_type(ctx, fn_scope, fn_decl.ret_type);
 				}
 
+				if (fn_decl.method_type)
+				{
+					fn_decl.method_type.resolved_type = resolve_type(ctx, fn_scope, fn_decl.method_type);
+				}
+
 				foreach (Node* param_node : fn_decl.params)
 				{
 					VarDecl* param = param_node.as(VarDecl);
@@ -119,6 +124,8 @@ fn void resolve_decls_pass(SemaContext* ctx)
 					}
 					set_type(ctx, (Node*)param, param.resolved_type);
 				}
+
+				fn_decl.resolved_type.status = RESOLVED;
 			}
 		}
 	}

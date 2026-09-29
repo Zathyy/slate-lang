@@ -59,7 +59,15 @@ fn void emit_typedef(CodegenContext* gen, TypedefDecl* decl)
 fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
 {
 	String mod_name = gen.ast_mod.name.replace(gen.alloc, "::", "_");
-	String full_name = string::format(gen.alloc, "%s_%s", mod_name, fn_decl.name.text);
+	String full_name @noinit;
+	if (fn_decl.method_type)
+	{
+		full_name = string::format(gen.alloc, "%s_%s_%s", mod_name, ast::raw_type_identifier(fn_decl.method_type)!!, fn_decl.name.text);
+	}
+	else
+	{
+		full_name = string::format(gen.alloc, "%s_%s", mod_name, fn_decl.name.text);
+	}
 
 	if (fn_decl.name.text == "main" || fn_decl.flags.is_extern)
 	{
@@ -68,33 +76,7 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
 
 	gen.locals.clear();
 
-	Type* ret_resolved_type = (fn_decl.ret_type != null) ? fn_decl.ret_type.resolved_type : null;
-
-	LLVMTypeRef ret_type = (fn_decl.ret_type != null && fn_decl.ret_type.resolved_type != null)
-		? map_type(gen, fn_decl.ret_type.resolved_type)
-		: llvm::void_type_in_context(gen.llvm_ctx);
-
-	List{LLVMTypeRef} param_types;
-	param_types.init(gen.alloc);
-
-	foreach (Node* param_node : fn_decl.params)
-	{
-		VarDecl* param = param_node.as(VarDecl);
-		if (param.var_flags.is_variadic) continue;
-		if (param.resolved_type == null)
-		{
-			diagnostics::error(gen.context, param_node.range, "Params type is null: %s", param.name.text);
-		}
-		param_types.push(map_type(gen, param.resolved_type));
-	}
-
-	LLVMTypeRef fn_type = llvm::function_type(
-		ret_type,
-		param_types.entries,
-		(uint)param_types.len(),
-		0
-	);
-
+	LLVMTypeRef fn_type = map_type(gen, fn_decl.resolved_type);
 	LLVMValueRef fn_val = llvm::add_function(gen.mod, (CChar*)full_name.ptr, fn_type);
 
 	LLVMAttributeRef nonnull_attr = llvm::create_enum_attribute(
@@ -108,8 +90,7 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
         0
     );
 
-	if (ret_resolved_type != null &&
-	        ret_resolved_type.kind == TYPE_REF)
+	if (fn_decl.ret_type != null && fn_decl.ret_type.resolved_type != null && fn_decl.ret_type.resolved_type.kind == TYPE_REF)
 	{
 	    llvm::add_attribute_at_index(fn_val, 0, nonnull_attr);
 	    llvm::add_attribute_at_index(fn_val, 0, noundef_attr);
@@ -193,13 +174,13 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
 			);
 			llvm::build_ret(gen.builder, zero);
 		}
-		else if (ret_type == llvm::void_type_in_context(gen.llvm_ctx))
+		else if (llvm::get_return_type(fn_type) == llvm::void_type_in_context(gen.llvm_ctx))
 		{
 			llvm::build_ret_void(gen.builder);
 		}
 		else
 		{
-			LLVMValueRef default_val = llvm::const_null(ret_type);
+			LLVMValueRef default_val = llvm::const_null(llvm::get_return_type(fn_type));
 			llvm::build_ret(gen.builder, default_val);
 		}
 	}

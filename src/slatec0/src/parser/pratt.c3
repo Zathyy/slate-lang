@@ -311,6 +311,8 @@ fn Node* parse_infix(ParseContext* ctx, Node* left, Precedence rbp)
 		case BANG:
 		case BANGBANG:
 			return parse_post_unary_expr(ctx, left, rbp);
+		case LPAREN:
+			return parse_call_expr(ctx, left);
 		default:
 			diagnostics::error(ctx.context, ctx.current.range, "Expected expression");
 			advance(ctx);
