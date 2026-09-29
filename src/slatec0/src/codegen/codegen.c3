@@ -23,6 +23,7 @@ struct CodegenContext
 {
 	Allocator alloc;
 	CompilerContext* context;
+	Module* ast_mod;
 
 	LLVMContextRef llvm_ctx;
 	LLVMModuleRef mod;
@@ -73,6 +74,7 @@ fn bool emit_module(CodegenContext* gen, Module* ast_mod)
 
 	ast_mod.llvm_module = llvm_mod;
 	gen.mod = llvm_mod;
+	gen.ast_mod = ast_mod;
 
 	foreach (Node* node : ast_mod.nodes)
 	{

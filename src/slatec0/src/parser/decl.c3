@@ -446,12 +446,22 @@ fn Node* parse_param_decl(ParseContext* ctx)
 		return node;
 	}
 
-	bool is_ref = consume(ctx, AMP);
-	TypeDescriptor* parsed_type = null;
-	bool has_ellipsis_after_type = false;
+	bool is_ref = false;
+    if (ctx.current.kind == AMP && ctx.peek(1).kind == IDENT && ctx.peek(1).value == "self")
+    {
+        consume(ctx, AMP);
+        is_ref = true;
+    }
+
+    if (ctx.current.kind == IDENT && ctx.current.value == "self")
+    {
+        node.name = parse_ident(ctx);
+        node.var_flags.is_self = true;
+        node.var_flags.is_self_by_ref = is_ref;
+        return node;
+    }
 
 	node.type = parse_type(ctx);
-
 	node.name = parse_ident(ctx);
 
 	return node;

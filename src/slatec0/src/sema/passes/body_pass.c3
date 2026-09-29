@@ -29,6 +29,11 @@ fn void check_fn_body(SemaContext* ctx, Scope* parent_scope, FnDecl* fn_decl)
 	foreach (Node* param_node : fn_decl.params)
 	{
 		VarDecl* param = param_node.as(VarDecl);
+
+		if (param.var_flags.is_self_by_ref || param.var_flags.is_self)
+		{
+		}
+
 		Type* param_type = resolve_type(ctx, parent_scope, param.type);
 		param.resolved_type = param_type;
 

@@ -98,6 +98,19 @@ fn void resolve_decls_pass(SemaContext* ctx)
 				foreach (Node* param_node : fn_decl.params)
 				{
 					VarDecl* param = param_node.as(VarDecl);
+
+					if (param.var_flags.is_self || param.var_flags.is_self_by_ref)
+					{
+						param.type = fn_decl.method_type;
+						if (param.var_flags.is_self_by_ref)
+						{
+							TypeDescriptor* ref = alloc::new(ctx.alloc, TypeDescriptor);
+							ref.modify.base = param.type;
+							ref.type_kind = TYPE_REF;
+							param.type = ref;
+						}
+					}
+
 					param.resolved_type = resolve_type(ctx, fn_scope, param.type);
 
 					if (!param.var_flags.is_variadic && !param.resolved_type)

@@ -16,7 +16,6 @@ struct Page
     usize used;
 }
 
-fn Arena.init(Arena& self, usize page_size)
+fn Arena.init(&self, usize page_size)
 {
-    
 }

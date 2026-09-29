@@ -11,9 +11,10 @@ fn LLVMTypeRef emit_struct_type(CodegenContext* gen, StructDecl* s_decl)
 		return s_decl.resolved_type.llvm_type;
 	}
 
-	CChar* c_name = (CChar*)s_decl.name.text.ptr;
+	String mod_name = gen.ast_mod.name.replace(gen.alloc, "::", ".");
+	String full_name = string::format(gen.alloc, "%s.%s", mod_name, s_decl.name.text);
 
-	LLVMTypeRef struct_type = llvm::struct_create_named(gen.llvm_ctx, c_name);
+	LLVMTypeRef struct_type = llvm::struct_create_named(gen.llvm_ctx, (CChar*)full_name.ptr);
 
 	if (s_decl.resolved_type != null)
 	{
@@ -57,8 +58,13 @@ fn void emit_typedef(CodegenContext* gen, TypedefDecl* decl)
 
 fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
 {
-	String fn_name = fn_decl.name.text;
-	CChar* c_fn_name = (CChar*)fn_name.ptr;
+	String mod_name = gen.ast_mod.name.replace(gen.alloc, "::", "_");
+	String full_name = string::format(gen.alloc, "%s_%s", mod_name, fn_decl.name.text);
+
+	if (fn_decl.name.text == "main" || fn_decl.flags.is_extern)
+	{
+		full_name = fn_decl.name.text;
+	}
 
 	gen.locals.clear();
 
@@ -89,7 +95,7 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
 		0
 	);
 
-	LLVMValueRef fn_val = llvm::add_function(gen.mod, c_fn_name, fn_type);
+	LLVMValueRef fn_val = llvm::add_function(gen.mod, (CChar*)full_name.ptr, fn_type);
 
 	LLVMAttributeRef nonnull_attr = llvm::create_enum_attribute(
         gen.llvm_ctx,
@@ -178,7 +184,7 @@ fn bool emit_function(CodegenContext* gen, FnDecl* fn_decl)
 
 	if (last_inst == null || !llvm::is_a_terminator_inst(last_inst))
 	{
-		if (fn_name == "main")
+		if (fn_decl.name.text == "main")
 		{
 			LLVMValueRef zero = llvm::const_int(
 				llvm::int_32_type_in_context(gen.llvm_ctx),
