@@ -56,31 +56,31 @@ inline bool is_bdigit(const u8 c) {
 enum class TokenType : u8
 {
     Error,
-    Amp,
-    BitOr,
-    BitXor,
-    BitNot, // ~
-    Bang, // !
-    Plus,
-    Minus,
-    Asterisk,
-    Div,
-    Mod,
-    Question,
-    QuestQuest,
-    Elvis,
-    BangBang,
-    PlusPlus,
-    MinusMinus,
+    Amp,          // &
+    BitOr,        // |
+    BitXor,       // ^
+    BitNot,       // ~
+    Bang,         // !
+    Plus,         // +
+    Minus,        // -
+    Asterisk,     // *
+    Div,          // /
+    Mod,          // %
+    Question,     // ?
+    QuestQuest,   // ??
+    Elvis,        // ?:
+    BangBang,     // !!
+    PlusPlus,     // ++
+    MinusMinus,   // --
 
-    Eq,
-    RShiftAssign,
-    LShiftAssign,
-    PlusAssign,
-    MinusAssign,
-    MultiplyAssign,
-    DivAssign,
-    ModAssign,
+    Eq,           // =
+    RShiftAssign, // >=
+    LShiftAssign, // <=
+    PlusAssign,   // +=
+    MinusAssign,  // -=
+    MultiplyAssign, // *=
+    DivAssign,    // /=
+    ModAssign,    // %=
     BitAndAssign,
     BitXorAssign,
     BirOrAssign,
