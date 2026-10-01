@@ -1,6 +1,8 @@
 [feature(LIBC)]
 module std::libc;
 
+/*
+
 extern fn __errno_location() -> i32*;
 
 extern fn printf(const u8* fmt, ...) -> i32;
@@ -20,3 +22,5 @@ extern fn free(void* data);
 
 extern fn abort();
 extern fn exit(i32 code);
+
+*/

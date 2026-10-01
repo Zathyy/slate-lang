@@ -31,30 +31,3 @@ fn SemaContext* create(CompilerContext* context)
 
 	return ctx;
 }
-
-fn void set_type(SemaContext* ctx, Node* node, Type* type)
-{
-    ctx.node_types.set(node.id, type);
-}
-
-fn Type*? get_type(SemaContext* ctx, Node* node)
-{
-    return ctx.node_types.get(node.id);
-}
-
-fn void run_pipeline(SemaContext* ctx)
-{
-	foreach (SourceFile* sf : ctx.context.files.value_iter())
-	{
-		Range range = source_file::get_range(sf);
-		sf.sema.scope = scope::create(ctx.alloc, range);
-	}
-
-    index_pass(ctx);
-
-    resolve_decls_pass(ctx);
-
-    //variable_pass(ctx);
-
-    body_pass(ctx);
-}

@@ -34,3 +34,38 @@ fn String? raw_type_identifier(TypeDescriptor* type)
 
 	return NOT_FOUND~;
 }
+
+fn String type_to_c_string(TypeDescriptor* type)
+{
+    if (!type) return "void";
+
+    TypeDescriptor* current = type;
+    DString sb;
+    sb.tinit();
+
+    switch (current.type_kind)
+    {
+        case TYPE_IDENTIFIER:
+        {
+            if (!current.unresolved.name) return "int";
+            return current.unresolved.name.text;
+        }
+        case TYPE_POINTER:
+        {
+            String base_str = type_to_c_string(current.modify.base);
+            return string::tformat("%s*", base_str);
+        }
+        case TYPE_SLICE:
+        {
+            String base_str = type_to_c_string(current.modify.base);
+            return string::tformat("%s*", base_str);
+        }
+        case TYPE_ARRAY:
+        {
+            String base_str = type_to_c_string(current.array.base);
+            return string::tformat("%s*", base_str);
+        }
+        default:
+            return "int";
+    }
+}

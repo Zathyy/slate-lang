@@ -33,7 +33,7 @@ struct Decl
 {
 	inline Node node;
 	Ident* name;
-	Type* resolved_type;
+	String qname;
 	Visibility visibility;
 }
 

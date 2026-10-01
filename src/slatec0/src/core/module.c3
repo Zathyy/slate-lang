@@ -3,11 +3,9 @@ module slate::core::mod;
 import slate::core::ast;
 import slate::core::diagnostics;
 
-import slate::sema::scope;
+import slate::sema;
 
 import std::io;
-
-import llvm;
 
 <*
  @param [&in] ctx
@@ -29,9 +27,10 @@ fn Module* create(CompilerContext* ctx, String name)
 	mod.nodes.init(ctx.alloc);
 	mod.module_decls.init(ctx.alloc);
 	mod.node_map.init(ctx.alloc);
-	mod.scope = scope::create(ctx.alloc, {});
 
 	ctx.modules.set(name, mod);
+
+	mod.scope = scope::create(ctx.alloc, {});
 
 	return mod;
 }

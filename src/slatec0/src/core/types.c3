@@ -2,15 +2,10 @@ module slate::core;
 
 import slate::lexer;
 import std::collections;
-import slate::sema::lookup;
-import llvm;
 
 struct CompilerContext
 {
-	LLVMContextRef llvm_context;
-	LLVMTargetMachineRef llvm_target;
 	Allocator alloc;
-	Lookup* lookup;
 	HashMap{FileID::inner, SourceFile*} files;
 	HashMap{String, Module*} modules;
 	List{String} features;
@@ -38,17 +33,11 @@ struct SourceFile
 	String content;
 	Ast ast;
 	FileID id;
-
-	struct sema
-	{
-		Scope* scope;
-	}
 }
 
 struct Module
 {
 	String name;
-	LLVMModuleRef llvm_module;
 	HashMap{NodeID, Node*} node_map;
 	List{Node*} nodes;
 	List{ModuleDecl*} module_decls;
@@ -92,7 +81,6 @@ struct Type
 	uint alignment;
 	uint type_id;
 	String name;
-	LLVMTypeRef llvm_type;
 
 	Type* canonical;
 

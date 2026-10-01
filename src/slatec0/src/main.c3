@@ -6,6 +6,9 @@ import std::os;
 
 import std::collections;
 
+import slate::emitter;
+import slate::sema;
+
 $expand(seali::@derive(Cli));
 struct Cli @Command({.name = "slatec", .about = "Slate compiler"})
 {
@@ -37,11 +40,11 @@ fn int main(String[] args) => @pool()
 
 	find_root_path(context);
 
-	path::chdir(globals::root_path)!!;
-
 	path::mkdir("build")!!;
 	path::mkdir("build/obj")!!;
 	path::mkdir("build/ir")!!;
+
+	path::chdir(globals::root_path)!!;
 
 	Path cwd = path::tcwd()!!;
 
@@ -103,55 +106,99 @@ fn void compile(CompilerContext* context)
 	}
 
 	SemaContext* sema = sema::create(context);
-	sema::run_pipeline(sema);
-	if (context.error_count > 0)
-	{
-		diagnostics::log_error("Analysis pipeline had errors, exiting...");
-		os::exit(1);
-	}
+    sema::index_pass(sema);
 
-	if (cli.json)
-	{
-		String path = string::tformat("%s/debug/ast.json", globals::build_path);
-		path::mkdir(string::tformat("%s/debug/", globals::build_path), true)!!;
-		File file = file::open(path, "w")!!;
-		context.modules.@each(; String name, Module* mod)
-		{
-			foreach (Node* node : mod.nodes)
-			{
-				String str = node.serialize(indent: 4);
-				file.write(str)!!;
-			};
-		};
-	}
+    if (context.error_count > 0)
+    {
+        diagnostics::log_error("Indexing had errors, exiting...");
+        os::exit(1);
+    }
 
-	CodegenContext* cg = codegen::create(context);
-	String path = utils::get_msvc_sdk(context.alloc);
+	// Ensure build/ir directory exists
+    path::mkdir(string::tformat("%s/ir", globals::build_path), true)!!;
+    String c_file_path = string::tformat("%s/ir/output.c", globals::build_path);
+    String exe_path = string::tformat("%s/slate_out.exe", globals::build_path); // Use .bin/.out on Linux
 
-	foreach (Module* mod : context.modules.value_iter())
-	{
-		log::info("Module: %s", mod.name);
-		if (!codegen::emit_module(cg, mod))
-		{
-			os::exit(1);
-		}
-	}
+    // Open file to write generated C code
+    File c_file = file::open(c_file_path, "w")!!;
 
-	Module* main_mod = context.modules.get("main")!!;
+    c_file.write("#include <stdio.h>\n")!!;
+    c_file.write("#include <stdint.h>\n")!!;
+    c_file.write("#include <stdbool.h>\n\n")!!;
 
-	LinkerContext* linker = linker::create(context);
-	String exe = linker::link(linker, main_mod)!!;
+    c_file.write("typedef size_t usize;\n")!!;
 
-	if (!run_after) return;
-	diagnostics::log_info("[Runner]: Executing '%s'", exe);
- 	String[*] args = {
-  		exe
+    c_file.write("typedef uint32_t typeid;\n")!!;
+
+    c_file.write("typedef uint8_t u8;\n")!!;
+    c_file.write("typedef uint16_t u16;\n")!!;
+    c_file.write("typedef uint32_t u32;\n")!!;
+    c_file.write("typedef uint64_t u64;\n")!!;
+    c_file.write("typedef int8_t i8;\n")!!;
+    c_file.write("typedef int16_t i16;\n")!!;
+    c_file.write("typedef int32_t i32;\n")!!;
+    c_file.write("typedef int64_t i64;\n\n")!!;
+
+    foreach (Module* mod : context.modules.value_iter())
+    {
+    	emitter::begin(sema, mod);
+        foreach (Node* node : mod.nodes)
+        {
+            emitter::forward_declare(node, &c_file);
+        }
+    }
+    c_file.write("\n")!!;
+
+    foreach (Module* mod : context.modules.value_iter())
+    {
+        log::info("Emitting C for Module: %s", mod.name);
+       	emitter::begin(sema, mod);
+
+        foreach (Node* node : mod.nodes)
+        {
+            emitter::emit_node_to_c(node, &c_file);
+        }
+    }
+
+    c_file.close();
+
+    diagnostics::log_info("Successfully generated C file at: %s", c_file_path);
+
+    diagnostics::log_info("Compiling generated C code with host compiler...");
+
+    diagnostics::log_info("Generating executable to %s", exe_path);
+
+    String[*] gcc_args = {
+        "clang",
+        "-x",
+        "c",
+        c_file_path,
+        "-o",
+        exe_path,
+        "-O0",                 // Disable optimizations so main isn't stripped/optimized
     };
 
-    Process proc = process::spawn(&args, INHERIT_ENV | INHERIT_STDIO)!!;
+    Process proc = process::spawn(&gcc_args, INHERIT_ENV | INHERIT_STDIO)!!;
     defer (void)proc.destroy();
     int exit_code = proc.join()!!;
-    diagnostics::log_info("[Runner]: Completed with exit code '%d'", exit_code);
+
+    if (exit_code != 0)
+    {
+        diagnostics::log_error("Host C compiler failed with exit code %d", exit_code);
+        os::exit(1);
+    }
+
+    diagnostics::log_info("Build complete! Executable created at: %s", exe_path);
+
+    if (!run_after) return;
+
+    diagnostics::log_info("[Runner]: Executing '%s'", exe_path);
+    String[*] run_args = { exe_path };
+
+    Process run_proc = process::spawn(&run_args, INHERIT_ENV | INHERIT_STDIO)!!;
+    defer (void)run_proc.destroy();
+    int run_exit_code = run_proc.join()!!;
+    diagnostics::log_info("[Runner]: Completed with exit code '%d'", run_exit_code);
 }
 
 fn void process_stdlib(CompilerContext* context) => @pool()

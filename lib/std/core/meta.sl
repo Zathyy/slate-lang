@@ -1,5 +1,7 @@
 module std::core::meta;
 
+/*
+
 enum TypeKind : u8
 {
     Void = 0,
@@ -37,3 +39,5 @@ struct TypeInfo
     usize align;
     String name;
 }
+
+*/
